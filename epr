@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Heston Virtual Practice — Virtual Patient Record</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --ink:#16323E;
+    --ink-soft:#2A4B58;
+    --teal:#1F6F5C;
+    --teal-dark:#155447;
+    --amber:#B8791E;
+    --amber-bg:#FCF1DE;
+    --alert:#A3352B;
+    --alert-bg:#FBEAE8;
+    --bg:#F2F6F5;
+    --panel:#FFFFFF;
+    --line:#DCE6E3;
+    --text:#152420;
+    --text-soft:#5B6E68;
+    --text-faint:#8A9B96;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'IBM Plex Sans', Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  a{color:var(--teal);}
+
+  /* ---------- Teaching banner (always visible) ---------- */
+  .teach-banner{
+    background:var(--amber-bg);
+    color:#5A3E10;
+    border-bottom:1px solid #E6C486;
+    font-size:12.5px;
+    padding:6px 16px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    letter-spacing:.01em;
+  }
+  .teach-banner strong{color:var(--amber);}
+  .teach-banner .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none;}
+
+  /* ---------- Sign-in gate ---------- */
+  #gate{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(31,111,92,0.10), transparent 45%),
+      linear-gradient(180deg, #0F2530 0%, #16323E 55%, #1B3E4C 100%);
+  }
+  .gate-card{
+    width:min(420px, 92vw);
+    background:var(--panel);
+    border-radius:10px;
+    padding:36px 32px 30px;
+    box-shadow:0 30px 60px -20px rgba(10,25,30,.55);
+  }
+  .gate-mark{
+    width:40px;height:40px;border-radius:9px;
+    background:var(--teal);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:700;font-size:17px;margin-bottom:18px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .gate-card h1{font-size:19px;margin:0 0 4px;color:var(--ink);letter-spacing:-.01em;}
+  .gate-card p.sub{margin:0 0 22px;color:var(--text-soft);font-size:13.5px;line-height:1.5;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;color:var(--text-soft);margin-bottom:5px;font-weight:500;}
+  .field input, .field select{
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:5px;
+    font-size:14px;font-family:inherit;color:var(--text);background:#FBFDFC;
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+  .gate-btn{
+    width:100%;padding:11px;border:none;border-radius:5px;background:var(--teal);
+    color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit;
+  }
+  .gate-btn:hover{background:var(--teal-dark);}
+  .gate-note{
+    margin-top:18px;padding:11px 12px;background:var(--amber-bg);border:1px solid #E6C486;
+    border-radius:5px;font-size:12px;color:#5A3E10;line-height:1.5;
+  }
+
+  /* ---------- App shell ---------- */
+  #app{display:none;min-height:100vh;flex-direction:column;}
+  .app-body{display:flex;flex:1;min-height:0;}
+
+  .topbar{
+    background:var(--ink);
+    color:#fff;
+    padding:10px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:13px;
+  }
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.01em;}
+  .topbar .brand .mark{
+    width:24px;height:24px;border-radius:6px;background:var(--teal);
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .topbar .user{display:flex;align-items:center;gap:14px;color:#CBDAD6;}
+  .topbar .user button{
+    background:transparent;border:1px solid #3C5560;color:#CBDAD6;border-radius:4px;
+    padding:5px 10px;font-size:12px;cursor:pointer;font-family:inherit;
+  }
+  .topbar .user button:hover{border-color:#5C7A85;color:#fff;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:270px;flex:none;background:var(--ink);color:#fff;
+    display:flex;flex-direction:column;padding:16px 0 0;
+  }
+  .sidebar-head{padding:0 16px 12px;}
+  .sidebar-head .label{font-size:11px;color:#8FA6AC;text-transform:none;letter-spacing:.02em;}
+  .search{margin:8px 16px 10px;}
+  .search input{
+    width:100%;padding:7px 10px;border-radius:5px;border:1px solid #2E4C57;
+    background:#0F2530;color:#fff;font-size:13px;font-family:inherit;
+  }
+  .search input::placeholder{color:#6E8890;}
+  .patient-list{list-style:none;margin:0;padding:0 8px 16px;overflow-y:auto;}
+  .patient-item{
+    padding:10px 10px;border-radius:6px;cursor:pointer;margin-bottom:3px;
+    display:flex;gap:10px;align-items:center;
+  }
+  .patient-item:hover{background:#1E3E4A;}
+  .patient-item.active{background:var(--teal);}
+  .p-avatar{
+    width:32px;height:32px;border-radius:50%;background:#2E4C57;flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .patient-item.active .p-avatar{background:rgba(255,255,255,.25);}
+  .p-name{font-size:13.5px;font-weight:600;line-height:1.25;}
+  .p-meta{font-size:11px;color:#A9C0C4;}
+  .patient-item.active .p-meta{color:#DCEFE9;}
+  .sidebar-foot{
+    margin-top:auto;padding:12px 16px;border-top:1px solid #24424D;font-size:11px;color:#87A0A6;line-height:1.5;
+  }
+
+  /* ---------- Main panel ---------- */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg);overflow-y:auto;}
+  .patient-banner{
+    background:var(--panel);border-bottom:1px solid var(--line);
+    padding:18px 28px;display:flex;align-items:flex-start;gap:18px;
+  }
+  .banner-avatar{
+    width:52px;height:52px;border-radius:50%;background:var(--teal);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex:none;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .banner-info h2{margin:0 0 4px;font-size:19px;color:var(--ink);letter-spacing:-.01em;}
+  .banner-line{font-size:13px;color:var(--text-soft);display:flex;flex-wrap:wrap;gap:14px;margin-top:2px;}
+  .banner-line span b{color:var(--text);font-weight:600;}
+  .banner-flags{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;max-width:280px;justify-content:flex-end;}
+  .flag{
+    font-size:11px;padding:4px 9px;border-radius:20px;font-weight:600;white-space:nowrap;
+  }
+  .flag.alert{background:var(--alert-bg);color:var(--alert);}
+  .flag.info{background:#E6EFEC;color:var(--teal-dark);}
+
+  .tabs{
+    display:flex;gap:2px;background:var(--panel);border-bottom:1px solid var(--line);
+    padding:0 28px;overflow-x:auto;
+  }
+  .tab{
+    padding:12px 14px;font-size:13.5px;color:var(--text-soft);cursor:pointer;
+    border-bottom:2px solid transparent;font-weight:500;white-space:nowrap;
+  }
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--teal-dark);border-bottom-color:var(--teal);font-weight:600;}
+
+  .content{padding:22px 28px 60px;flex:1;}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin-bottom:16px;
+  }
+  .card h3{margin:0 0 12px;font-size:14px;color:var(--ink);letter-spacing:-.005em;}
+  .card h3 .count{color:var(--text-faint);font-weight:400;font-size:12.5px;margin-left:6px;}
+
+  table.rec{width:100%;border-collapse:collapse;font-size:13.5px;}
+  table.rec th{
+    text-align:left;font-size:11.5px;color:var(--text-soft);font-weight:600;
+    padding:6px 10px;border-bottom:1px solid var(--line);
+  }
+  table.rec td{padding:9px 10px;border-bottom:1px solid #EEF3F1;vertical-align:top;}
+  table.rec tr:last-child td{border-bottom:none;}
+  .pill{
+    display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#E6EFEC;
+    color:var(--teal-dark);font-weight:600;
+  }
+  .pill.active{background:#E6EFEC;color:var(--teal-dark);}
+  .pill.chronic{background:#EFEBE0;color:#7A5B1E;}
+  .pill.pending{background:var(--amber-bg);color:var(--amber);}
+  .pill.seen, .pill.complete{background:#E6EFEC;color:var(--teal-dark);}
+  .pill.discharged{background:#EAEDF0;color:#5B6E68;}
+
+  .result-flag{font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .result-flag.normal{color:var(--teal-dark);}
+  .result-flag.high{color:var(--alert);}
+  .result-flag.low{color:var(--amber);}
+
+  .letter-entry{
+    border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;background:#FBFDFC;
+  }
+  .letter-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;flex-wrap:wrap;}
+  .letter-subject{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px;}
+  .letter-meta{font-size:12px;color:var(--text-soft);margin-bottom:8px;}
+  .letter-body{font-size:13.5px;line-height:1.6;color:var(--text);}
+  .report-block{
+    border-left:3px solid var(--teal);padding:4px 0 4px 14px;margin-top:10px;font-size:13px;line-height:1.6;
+  }
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width: 900px){.grid2{grid-template-columns:1fr;}}
+
+  .strengths-list, .challenges-list{margin:0;padding-left:0;list-style:none;}
+  .strengths-list li, .challenges-list li{
+    padding:8px 0 8px 16px;border-left:3px solid var(--teal);margin-bottom:8px;font-size:13px;line-height:1.5;
+  }
+  .challenges-list li{border-left-color:var(--amber);}
+  .strengths-list li b, .challenges-list li b{display:block;font-size:12px;color:var(--text-soft);margin-bottom:2px;font-weight:600;}
+
+  /* ---------- Clinical notes ---------- */
+  .notes-toolbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;
+  }
+  .notes-toolbar .src{font-size:12px;color:var(--text-soft);}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:5px;
+    border:1px solid var(--teal);background:#fff;color:var(--teal-dark);font-size:13px;font-weight:600;
+    cursor:pointer;font-family:inherit;
+  }
+  .btn:hover{background:#EAF3F0;}
+  .btn.solid{background:var(--teal);color:#fff;}
+  .btn.solid:hover{background:var(--teal-dark);}
+  #xlsxInput{display:none;}
+
+  .note-entry{
+    border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;background:#FBFDFC;
+  }
+  .note-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+  .note-date{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink);font-weight:600;}
+  .note-type{font-size:11px;background:#E6EFEC;color:var(--teal-dark);padding:2px 8px;border-radius:20px;font-weight:600;}
+  .note-author{font-size:12px;color:var(--text-soft);margin-bottom:8px;}
+  .note-text{font-size:13.5px;line-height:1.6;color:var(--text);}
+  .empty-notes{padding:24px;text-align:center;color:var(--text-soft);font-size:13px;}
+
+  .toast{
+    position:fixed;bottom:22px;right:22px;background:var(--ink);color:#fff;padding:12px 16px;
+    border-radius:6px;font-size:13px;box-shadow:0 12px 30px -8px rgba(0,0,0,.4);
+    display:flex;align-items:center;gap:10px;transform:translateY(12px);opacity:0;
+    transition:transform .25s ease, opacity .25s ease;pointer-events:none;z-index:50;max-width:340px;
+  }
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);flex:none;}
+
+  ::-webkit-scrollbar{width:9px;height:9px;}
+  ::-webkit-scrollbar-thumb{background:#C7D5D1;border-radius:5px;}
+
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+
+<!-- ======================= SIGN-IN GATE ======================= -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-mark">HV</div>
+    <h1>Heston Virtual Practice</h1>
+    <p class="sub">Virtual Patient Record — a teaching EPR for the Campbell family scenario. St Mary's University, School of Medicine.</p>
+
+    <div class="field">
+      <label for="studentName">Your name</label>
+      <input id="studentName" type="text" placeholder="e.g. J. Sharma" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label for="studentGroup">Placement / seminar group (optional)</label>
+      <input id="studentGroup" type="text" placeholder="e.g. Primary Care Block, Group 4" autocomplete="off" />
+    </div>
+    <button class="gate-btn" id="enterBtn">Open patient record system</button>
+
+    <div class="gate-note">This is a simulated record for teaching purposes only. The Campbell family is fictional — no identifiable individual is represented. Treat it with the same care as a real record.</div>
+  </div>
+</div>
+
+<!-- ======================= APP ======================= -->
+<div id="app">
+  <div class="teach-banner"><span class="dot"></span><strong>SIMULATED RECORD — FOR EDUCATIONAL USE ONLY.</strong>&nbsp;The Campbell family is a fictional teaching case. No real patient data is held in this system.</div>
+
+  <div class="topbar">
+    <div class="brand"><span class="mark">HV</span> Heston Virtual Practice · Patient Record System</div>
+    <div class="user"><span id="whoami"></span><button id="signOutBtn">Sign out</button></div>
+  </div>
+
+  <div class="app-body">
+    <div class="sidebar">
+      <div class="sidebar-head"><span class="label">CAMPBELL FAMILY — REGISTERED PATIENTS</span></div>
+      <div class="search"><input id="patientSearch" placeholder="Search patients…" /></div>
+      <ul class="patient-list" id="patientList"></ul>
+      <div class="sidebar-foot">Teaching resource built for St Mary's University SoM.<br/>Clinical notes are refreshed from a linked Excel workbook — see the Clinical Notes tab.</div>
+    </div>
+
+    <div class="main">
+      <div class="patient-banner" id="patientBanner"></div>
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="overview">Overview</div>
+        <div class="tab" data-tab="problems">Problem List</div>
+        <div class="tab" data-tab="meds">Medications &amp; Allergies</div>
+        <div class="tab" data-tab="investigations">Investigations</div>
+        <div class="tab" data-tab="letters">Letters</div>
+        <div class="tab" data-tab="referrals">Referrals</div>
+        <div class="tab" data-tab="immunisations">Immunisations</div>
+        <div class="tab" data-tab="social">Social &amp; Family Context</div>
+        <div class="tab" data-tab="notes">Clinical Notes</div>
+      </div>
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="xlsxInput" accept=".xlsx,.xls" />
+<div class="toast" id="toast"><span class="dot"></span><span id="toastText"></span></div>
+
+<script>
+/* =========================================================
+   DATA MODEL
+   ========================================================= */
+const PATIENTS = [
+  {
+    id: "jean", sheet: "Jean Campbell", name: "Jean Campbell", initials: "JC",
+    dob: "14/03/1969", age: 57, sex: "Female", nhs: "700 148 3260",
+    address: "Flat 72, Convent Way Estate, Heston, TW5",
+    gp: "Dr A. Osei", practice: "Heston Virtual Practice",
+    flags: [{t:"Reduced mobility", k:"alert"}, {t:"Long-term conditions x3", k:"info"}],
+    problems: [
+      {name:"Type 2 diabetes mellitus", since:"2016", status:"Active — chronic"},
+      {name:"Essential hypertension", since:"2014", status:"Active — chronic"},
+      {name:"Osteoarthritis, bilateral knees", since:"2022", status:"Active — chronic"},
+      {name:"Reduced mobility / functional impairment", since:"2024", status:"Active"},
+    ],
+    meds: [
+      {name:"Metformin 500mg", dose:"Two tablets twice daily with food", note:"Type 2 diabetes"},
+      {name:"Amlodipine 5mg", dose:"One tablet each morning", note:"Hypertension"},
+      {name:"Paracetamol 500mg", dose:"Two tablets up to four times daily as needed", note:"Knee pain"},
+    ],
+    allergies: [{name:"No known drug allergies", reaction:"—"}],
+    investigations: [
+      {date:"14/01/2026", test:"HbA1c", result:"58 mmol/mol", range:"Target <53 mmol/mol", flag:"high"},
+      {date:"14/01/2026", test:"eGFR", result:"71 mL/min/1.73m²", range:">60", flag:"normal"},
+      {date:"14/01/2026", test:"Total cholesterol", result:"4.6 mmol/L", range:"<5.0", flag:"normal"},
+      {date:"14/01/2026", test:"Blood pressure", result:"134/82 mmHg", range:"<140/90", flag:"normal"},
+      {date:"20/11/2025", test:"Knee X-ray (bilateral)", result:"Report below", range:"—", flag:"normal", report:"Moderate joint space narrowing and osteophyte formation at both knees, right slightly worse than left, consistent with moderate osteoarthritis. No fracture. Correlate clinically."},
+    ],
+    letters: [
+      {date:"25/11/2025", from:"Mr D. Patel, Orthopaedic Consultant", to:"Dr A. Osei, GP", subject:"Outpatient clinic letter — bilateral knee osteoarthritis",
+       body:"Thank you for referring Mrs Campbell. Examination confirms moderate bilateral knee osteoarthritis, right greater than left, with reduced range of movement but stable ligaments. Recommend continued physiotherapy and weight-bearing exercise as tolerated. Surgery not indicated at this stage given her mobility remains functional at home. Happy to review again if symptoms progress or if conservative measures fail."},
+      {date:"03/09/2025", from:"Diabetes Eye Screening Service", to:"Dr A. Osei, GP", subject:"Diabetic retinopathy screening result",
+       body:"Annual diabetic eye screening completed. No signs of diabetic retinopathy in either eye (R0/M0 bilaterally). Routine recall in 12 months."},
+    ],
+    referrals: [
+      {date:"02/09/2025", service:"Orthopaedics — Knee Clinic", reason:"Worsening bilateral knee pain affecting mobility", status:"seen"},
+      {date:"15/09/2025", service:"Social Prescribing Link Worker", reason:"Housing uncertainty and wellbeing support", status:"seen"},
+      {date:"20/01/2026", service:"MSK Physiotherapy", reason:"Home exercise programme for knee osteoarthritis", status:"seen"},
+    ],
+    immunisations: [
+      {vaccine:"Influenza (seasonal)", date:"08/10/2025", given_by:"Practice Nurse"},
+      {vaccine:"COVID-19 booster", date:"08/10/2025", given_by:"Practice Nurse"},
+      {vaccine:"Pneumococcal (PPV23)", date:"14/01/2023", given_by:"Practice Nurse"},
+    ],
+    strengths: [
+      {t:"Individual gifts", d:"Cooking, caring judgement built from years in residential care and hotel work; widely trusted on the estate."},
+      {t:"Associations", d:"Central figure in her church community; keeps an eye on an older neighbour; strong estate networks."},
+      {t:"Aspiration", d:"Wants enough mobility to stay active and keep contributing to her community."},
+    ],
+    challenges: [
+      {t:"Housing & mobility", d:"Seventh-floor flat; the lift is unreliable often enough that Jean checks it before every appointment and sometimes decides not to travel."},
+      {t:"Fear of judgement", d:"Has experienced clinicians making assumptions about her diet or speaking to her daughter rather than to her; now cautious about what she discloses."},
+    ],
+    household: "Lives with Janet (daughter) and Michael (son) in a two-bedroom flat. Natasha (daughter) lives in Wandsworth but remains closely involved. Uses the main bedroom for bathroom access."
+  },
+  {
+    id: "janet", sheet: "Janet Campbell", name: "Janet Campbell", initials: "JC",
+    dob: "02/06/1998", age: 28, sex: "Female", nhs: "700 148 3277",
+    address: "Flat 72, Convent Way Estate, Heston, TW5",
+    gp: "Dr A. Osei", practice: "Heston Virtual Practice",
+    flags: [{t:"CMHT follow-up", k:"info"}, {t:"Selective disclosure", k:"alert"}],
+    problems: [
+      {name:"Schizophrenia", since:"2024 (following first-episode psychosis)", status:"Active — community follow-up"},
+    ],
+    meds: [
+      {name:"Risperidone", dose:"As directed by community mental health team", note:"Maintenance treatment"},
+    ],
+    allergies: [{name:"No known drug allergies", reaction:"—"}],
+    investigations: [
+      {date:"11/11/2025", test:"Fasting glucose", result:"5.1 mmol/L", range:"4.0–5.9", flag:"normal"},
+      {date:"11/11/2025", test:"Total cholesterol", result:"4.4 mmol/L", range:"<5.0", flag:"normal"},
+      {date:"11/11/2025", test:"Weight / BMI", result:"BMI 24.8", range:"18.5–24.9", flag:"normal"},
+      {date:"11/11/2025", test:"ECG", result:"Normal sinus rhythm, QTc within normal limits", range:"—", flag:"normal"},
+    ],
+    letters: [
+      {date:"14/03/2024", from:"Dr P. Nkomo, Consultant Psychiatrist", to:"Dr A. Osei, GP", subject:"Discharge summary — inpatient admission",
+       body:"Janet was admitted informally following a first episode of psychosis with severe distress. Risk assessment on discharge showed no ongoing risk to self or others. Diagnosis of schizophrenia given following MDT review. Discharged home to family support with community mental health team follow-up and antipsychotic medication commenced. Please continue routine physical health monitoring in primary care alongside CMHT input."},
+      {date:"20/08/2025", from:"Dr P. Nkomo, Consultant Psychiatrist", to:"Dr A. Osei, GP", subject:"Community mental health clinic letter",
+       body:"Janet continues to do well in the community. No relapse indicators. She has begun a phased return to teaching, supported by occupational health. She remains selective about disclosure at work; this has been discussed and is respected as her choice. Continue current medication; next CMHT review in 8 weeks."},
+    ],
+    referrals: [
+      {date:"10/03/2024", service:"Community Mental Health Team (CMHT)", reason:"Follow-up after first-episode psychosis admission", status:"seen"},
+      {date:"14/07/2025", service:"Occupational Health (via employer)", reason:"Phased return to teaching following mental health admission", status:"seen"},
+    ],
+    immunisations: [
+      {vaccine:"Influenza (seasonal)", date:"02/10/2025", given_by:"Practice Nurse"},
+      {vaccine:"COVID-19 booster", date:"02/10/2025", given_by:"Practice Nurse"},
+    ],
+    strengths: [
+      {t:"Individual gifts", d:"Qualified primary school teacher; especially skilled with anxious children; brings written questions to her own appointments."},
+      {t:"Insight", d:"Her own experience gives her empathy and a strong belief that people should be involved in decisions about their care."},
+      {t:"Aspiration", d:"Wants to sustain teaching without having to hide her health."},
+    ],
+    challenges: [
+      {t:"Fear of judgement", d:"Selective about disclosure at work — worried about being seen as unsafe, unreliable or less capable as a teacher and carer."},
+      {t:"Hidden effort", d:"Described by professionals as 'high functioning' or 'resilient' — language that can hide the effort involved and reduce the chance anyone asks what support she needs."},
+    ],
+    household: "Lives with Jean (mother) and Michael (brother). Uses the smaller bedroom — the family agreed protected sleep and privacy help her stay well and continue working. Shares caring responsibility for Michael and helps coordinate Jean's appointments."
+  },
+  {
+    id: "natasha", sheet: "Natasha Campbell", name: "Natasha Campbell", initials: "NC",
+    dob: "19/09/2000", age: 25, sex: "Female", nhs: "700 148 3284",
+    address: "14 Elder Court, Wandsworth, SW18 (registered GP: Wandsworth practice — seen here as temporary patient)",
+    gp: "Dr F. Iqbal (temporary registration)", practice: "Heston Virtual Practice (visiting)",
+    flags: [{t:"Registered elsewhere", k:"info"}],
+    problems: [
+      {name:"No significant past medical history recorded at this practice", since:"—", status:"—"},
+    ],
+    meds: [],
+    allergies: [{name:"Not recorded at this practice", reaction:"—"}],
+    investigations: [],
+    letters: [],
+    referrals: [],
+    immunisations: [],
+    strengths: [
+      {t:"Individual gifts", d:"Practical and persistent — navigates online systems, challenges incorrect decisions, keeps going through long telephone queues."},
+      {t:"Family role", d:"Takes on calls, online forms and errands that are hard to manage on public transport; visits when she can."},
+      {t:"Aspiration", d:"Wants fairer sharing of care across the family."},
+    ],
+    challenges: [
+      {t:"Competing demands", d:"Balances nursery arrangements, rent, work and her own family alongside supporting Jean and Michael."},
+      {t:"Complex feelings", d:"Sometimes described, half-jokingly, as the one who 'got out' — a phrase that carries pride, guilt and occasional resentment. Sometimes steps back from family conversations, not because she cares less."},
+    ],
+    household: "Lives independently in Wandsworth with her own family and young child. Does not live in the Convent Way household but remains emotionally and practically connected to Jean, Janet and Michael."
+  },
+  {
+    id: "michael", sheet: "Michael Campbell", name: "Michael Campbell", initials: "MC",
+    dob: "05/05/2005", age: 21, sex: "Male", nhs: "700 148 3291",
+    address: "Flat 72, Convent Way Estate, Heston, TW5",
+    gp: "Dr A. Osei", practice: "Heston Virtual Practice",
+    flags: [{t:"Type 1 diabetes", k:"alert"}, {t:"Inconsistent routine", k:"alert"}],
+    problems: [
+      {name:"Type 1 diabetes mellitus", since:"Diagnosed as a teenager", status:"Active — chronic"},
+      {name:"Anxiety related to a previous police/hypoglycaemia incident", since:"2025", status:"Active"},
+    ],
+    meds: [
+      {name:"Insulin glargine", dose:"Once daily, as agreed with diabetes specialist nurse", note:"Basal insulin"},
+      {name:"Insulin aspart", dose:"With meals, dose adjusted to carbohydrate intake", note:"Bolus insulin"},
+    ],
+    allergies: [{name:"No known drug allergies", reaction:"—"}],
+    investigations: [
+      {date:"09/02/2026", test:"HbA1c", result:"64 mmol/mol", range:"Target <58 mmol/mol", flag:"high"},
+      {date:"09/02/2026", test:"Continuous glucose monitor — time in range", result:"48%", range:"Target >70%", flag:"low"},
+      {date:"09/02/2026", test:"U&E (renal function)", result:"Normal", range:"—", flag:"normal"},
+      {date:"09/02/2026", test:"Thyroid function (TFTs)", result:"Normal", range:"—", flag:"normal"},
+      {date:"21/01/2026", test:"Capillary glucose (ED attendance)", result:"1.9 mmol/L on arrival", range:"4.0–7.0", flag:"low"},
+    ],
+    letters: [
+      {date:"22/01/2026", from:"Heston General Hospital, Emergency Department", to:"Dr A. Osei, GP", subject:"Emergency Department discharge summary — severe hypoglycaemia",
+       body:"Michael presented via ambulance with confusion and reduced consciousness, found to be severely hypoglycaemic (capillary glucose 1.9 mmol/L). Treated with IV dextrose with good recovery to baseline. Bystander history noted he had initially been restrained by police prior to ambulance arrival, having been mistaken for intoxicated; no injuries sustained. No further action taken by police. Discharged home same day with advice to follow up urgently with diabetes specialist nurse and consider review of insulin regimen and hypoglycaemia awareness."},
+      {date:"14/01/2026", from:"J. Okafor, Diabetes Specialist Nurse", to:"Dr A. Osei, GP", subject:"Diabetes clinic letter — urgent review",
+       body:"Seen urgently following ED attendance for severe hypoglycaemia. Continuous glucose monitor data reviewed together with Michael, showing a pattern of overnight lows following poor sleep. Agreed a targeted plan for higher-risk nights rather than a blanket dose change. Michael engaged well when the discussion focused on patterns he had identified himself. Will continue to support re routine and disclosure anxiety following the incident."},
+    ],
+    referrals: [
+      {date:"22/01/2026", service:"Diabetes Specialist Nurse — urgent review", reason:"Severe hypoglycaemic episode requiring ED attendance", status:"seen"},
+      {date:"05/02/2026", service:"Youth Advocacy Service", reason:"Support following distressing incident with police during hypoglycaemic episode", status:"pending"},
+      {date:"05/02/2026", service:"Psychology / Talking Therapies", reason:"Anxiety and low mood related to police incident and fear of recurrence", status:"pending"},
+    ],
+    immunisations: [
+      {vaccine:"Influenza (seasonal)", date:"15/10/2025", given_by:"Practice Nurse"},
+      {vaccine:"COVID-19 booster", date:"15/10/2025", given_by:"Practice Nurse"},
+    ],
+    strengths: [
+      {t:"Individual gifts", d:"Digitally skilled — repairs phones and laptops for neighbours, helps run the church livestream; wants an IT support apprenticeship."},
+      {t:"Community", d:"Online gaming communities are a source of friendship and competence, not just avoidance."},
+      {t:"Aspiration", d:"Wants independence and a pathway into IT."},
+    ],
+    challenges: [
+      {t:"Trust in authority", d:"Last year became severely hypoglycaemic in public; police initially treated him as intoxicated and handcuffed him before an ambulance crew identified hypoglycaemia. He believes his age, race and location affected how quickly he was seen as a risk rather than someone needing help."},
+      {t:"Routine disruption", d:"Insulin routines become inconsistent when sleep and anxiety deteriorate; sometimes misses appointments. Understands the risks — the difficulty is sustaining routine while feeling safe and in control."},
+    ],
+    household: "Lives with Jean (mother) and Janet (sister); sleeps on a sofa bed in the living room. Keeps diabetes information on his phone and in his wallet but rarely wears a visible medical bracelet."
+  },
+];
+
+/* Default clinical notes — mirrors the linked Excel workbook at first load.
+   Re-importing the workbook (Clinical Notes tab) overwrites this per patient. */
+const DEFAULT_NOTES = {
+  jean: [
+    {date:"03/02/2026", time:"09:40", author:"Dr A. Osei", role:"GP", type:"GP Consultation",
+     text:"Reviewed for knee pain and mobility. Reports pain worse on stairs and when the estate lift is out of service, limiting shopping and church attendance. Discussed weight-bearing exercise adapted to home space and pain levels. Continues metformin and amlodipine, good understanding of both. Declined referral to weight-management group for now; open to revisiting. Safety-netted re worsening pain or swelling."},
+    {date:"14/01/2026", time:"11:15", author:"S. Whitlock", role:"Practice Nurse", type:"Diabetes Annual Review",
+     text:"HbA1c stable. Feet checked, sensation intact, no ulceration. Discussed diet in a way that reflected Jean's own cooking rather than generic advice; she described swaps she has already made. Blood pressure within target on current amlodipine dose. Reminded re annual retinal screening appointment."},
+    {date:"02/12/2025", time:"16:00", author:"R. Ferreira", role:"Physiotherapist", type:"MSK Physiotherapy Review",
+     text:"Bilateral knee osteoarthritis, functionally limiting on bad days. Home exercise programme issued, adapted for a small flat and for days when descending seven floors is not feasible. Discussed a walking aid; Jean will consider this and discuss with family first."},
+    {date:"19/11/2025", time:"10:05", author:"Dr A. Osei", role:"GP", type:"Telephone Triage",
+     text:"Called by Jean regarding a missed hospital outpatient appointment — the lift was out of service that morning. Rebooked appointment and flagged to admin to note lift access as a recurring barrier for this patient. Jean was clearly frustrated but engaged constructively; no clinical concerns raised today."},
+    {date:"30/09/2025", time:"13:30", author:"L. Adeyemi", role:"Social Prescribing Link Worker", type:"Social Prescribing / Housing",
+     text:"Met Jean following GP referral. Discussed Convent Way regeneration uncertainty and its effect on her wellbeing. Jean is well connected locally (church, neighbours) and was clear she wants information, not a service to 'manage' her. Provided details of the residents' meeting and estate renewal contact."},
+  ],
+  janet: [
+    {date:"27/01/2026", time:"14:20", author:"Dr P. Nkomo", role:"Consultant Psychiatrist", type:"Community Mental Health Review",
+     text:"Routine follow-up in the community mental health team. Mental state stable, no psychotic symptoms. Continues part-time phased return to teaching. Janet raised concern about disclosure at work and fear of being seen as 'unsafe' — discussed at length. Continues current antipsychotic; tolerating well, no extrapyramidal side effects noted. Agreed to review again in 6 weeks."},
+    {date:"05/01/2026", time:"09:00", author:"K. Osborne", role:"Community Mental Health Nurse", type:"Care Coordination Review",
+     text:"Home visit as part of phased return support. Janet is organised and proactive, brings her own written questions to appointments. Sleep and routine protected by current bedroom arrangement at home. No current safeguarding concerns. Discussed peer support group; Janet interested but time-limited by work and caring responsibilities for Michael."},
+    {date:"11/11/2025", time:"15:45", author:"Dr P. Nkomo", role:"Consultant Psychiatrist", type:"Medication Review",
+     text:"Medication review — no changes made. Janet reports feeling 'high functioning' language from colleagues sometimes makes it harder to ask for help. Discussed how this can mask ongoing effort and fatigue. Agreed a plan for what Janet will say if she needs to step back from a shift."},
+    {date:"22/09/2025", time:"10:30", author:"Dr A. Osei", role:"GP", type:"GP Consultation",
+     text:"Attended with Jean for a joint appointment about shared caring responsibilities. Janet is managing well but flagged the physical and emotional load of supporting both her mother and Michael. Discussed carer's assessment; Janet will consider this."},
+  ],
+  natasha: [
+    {date:"18/12/2025", time:"12:10", author:"Dr F. Iqbal", role:"GP", type:"GP Consultation (temporary registration)",
+     text:"Natasha is registered with a GP practice in Wandsworth; seen today as a temporary patient while visiting family in Heston. Attended primarily to discuss how to support her mother Jean with an upcoming hospital appointment. No new health concerns for Natasha herself today."},
+    {date:"03/08/2025", time:"09:50", author:"Dr F. Iqbal", role:"GP", type:"Telephone Triage",
+     text:"Called on behalf of the family to query an appointment letter for Jean that had gone to the wrong address. Query resolved and passed to administrative team. Natasha noted she often coordinates this kind of admin for the family alongside her own work and childcare commitments."},
+  ],
+  michael: [
+    {date:"09/02/2026", time:"16:40", author:"J. Okafor", role:"Diabetes Specialist Nurse", type:"Diabetes Specialist Nurse Review",
+     text:"Type 1 diabetes, reviewed after a period of missed appointments. Michael was open that sleep and anxiety have made his insulin routine inconsistent. Discussed practical adjustments rather than a rigid regimen. He keeps diabetes information on his phone and in his wallet, but rarely wears a visible medical bracelet — discussed this without pressuring him to change his mind today."},
+    {date:"21/01/2026", time:"11:00", author:"Dr A. Osei", role:"GP", type:"Telephone Triage",
+     text:"Michael called concerned about recurrent low glucose readings overnight. Advised on immediate management and safety-netted regarding severe hypoglycaemia. Discussed his previous frightening experience of being restrained by police during a hypoglycaemic episode, and his anxiety about being 'seen as a risk' rather than unwell if it happened again. Referred back to diabetes specialist nurse for urgent review."},
+    {date:"14/01/2026", time:"17:15", author:"J. Okafor", role:"Diabetes Specialist Nurse", type:"Diabetes Specialist Nurse Review",
+     text:"Urgent review following telephone triage. No further hypoglycaemic episodes since. Reviewed continuous glucose monitor data together — patterns of overnight lows on days following poor sleep. Agreed a plan focused on the nights he identifies as highest risk rather than a blanket change. Michael engaged well when the conversation focused on patterns he had noticed himself."},
+    {date:"30/10/2025", time:"14:00", author:"Dr A. Osei", role:"GP", type:"GP Consultation",
+     text:"Attended alone. Discussed the police incident from earlier in the year and his ongoing distrust of authority figures. Low mood but no red flags for depression or self-harm on screening. Signposted to youth-specific advocacy support; Michael non-committal but appreciated it being raised rather than assumed he was coping."},
+  ],
+};
+
+let notesData = JSON.parse(JSON.stringify(DEFAULT_NOTES));
+let notesSource = { jean:"default", janet:"default", natasha:"default", michael:"default" };
+let currentPatientId = PATIENTS[0].id;
+let currentTab = "overview";
+
+/* =========================================================
+   BEST-EFFORT PERSISTENCE (Claude artifact storage where available)
+   Falls back silently to in-memory only if unavailable — never
+   uses localStorage/sessionStorage.
+   ========================================================= */
+async function tryRestoreNotes(){
+  if (!window.storage) return;
+  for (const p of PATIENTS){
+    try{
+      const r = await window.storage.get('notes:' + p.id, false);
+      if (r && r.value){
+        const parsed = JSON.parse(r.value);
+        if (Array.isArray(parsed)) { notesData[p.id] = parsed; notesSource[p.id] = "imported"; }
+      }
+    }catch(e){ /* no saved value yet — fine */ }
+  }
+}
+async function trySaveNotes(patientId){
+  if (!window.storage) return;
+  try{ await window.storage.set('notes:' + patientId, JSON.stringify(notesData[patientId]), false); }
+  catch(e){ /* best effort only */ }
+}
+
+/* =========================================================
+   GATE
+   ========================================================= */
+document.getElementById('enterBtn').addEventListener('click', enterApp);
+document.getElementById('studentName').addEventListener('keydown', e=>{ if(e.key==='Enter') enterApp(); });
+
+async function enterApp(){
+  const name = document.getElementById('studentName').value.trim() || "Guest student";
+  const group = document.getElementById('studentGroup').value.trim();
+  document.getElementById('whoami').textContent = group ? `${name} · ${group}` : name;
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  await tryRestoreNotes();
+  renderPatientList();
+  selectPatient(currentPatientId);
+}
+document.getElementById('signOutBtn').addEventListener('click', ()=>{
+  document.getElementById('app').style.display='none';
+  document.getElementById('gate').style.display='flex';
+});
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+function renderPatientList(filter=""){
+  const list = document.getElementById('patientList');
+  list.innerHTML = "";
+  PATIENTS.filter(p => p.name.toLowerCase().includes(filter.toLowerCase())).forEach(p=>{
+    const li = document.createElement('li');
+    li.className = 'patient-item' + (p.id===currentPatientId ? ' active':'');
+    li.innerHTML = `<div class="p-avatar">${p.initials}</div>
+      <div><div class="p-name">${p.name}</div><div class="p-meta">${p.age} yrs · ${p.sex} · NHS-style ID ${p.nhs}</div></div>`;
+    li.addEventListener('click', ()=> selectPatient(p.id));
+    list.appendChild(li);
+  });
+}
+document.getElementById('patientSearch').addEventListener('input', e=> renderPatientList(e.target.value));
+
+function selectPatient(id){
+  currentPatientId = id;
+  renderPatientList(document.getElementById('patientSearch').value);
+  renderBanner();
+  renderTabContent();
+}
+
+/* =========================================================
+   BANNER
+   ========================================================= */
+function renderBanner(){
+  const p = PATIENTS.find(x=>x.id===currentPatientId);
+  const flagsHtml = p.flags.map(f=>`<span class="flag ${f.k}">${f.t}</span>`).join("");
+  document.getElementById('patientBanner').innerHTML = `
+    <div class="banner-avatar">${p.initials}</div>
+    <div class="banner-info">
+      <h2>${p.name}</h2>
+      <div class="banner-line">
+        <span><b>${p.age}</b> yrs, ${p.sex}</span>
+        <span>DOB <b class="mono">${p.dob}</b></span>
+        <span>NHS-style ID <b class="mono">${p.nhs}</b></span>
+        <span>GP <b>${p.gp}</b></span>
+      </div>
+      <div class="banner-line"><span>${p.address}</span></div>
+    </div>
+    <div class="banner-flags">${flagsHtml}</div>
+  `;
+}
+
+/* =========================================================
+   TABS
+   ========================================================= */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.tab;
+    renderTabContent();
+  });
+});
+
+function renderTabContent(){
+  const p = PATIENTS.find(x=>x.id===currentPatientId);
+  const el = document.getElementById('content');
+  if (currentTab === "overview") el.innerHTML = tplOverview(p);
+  else if (currentTab === "problems") el.innerHTML = tplProblems(p);
+  else if (currentTab === "meds") el.innerHTML = tplMeds(p);
+  else if (currentTab === "investigations") el.innerHTML = tplInvestigations(p);
+  else if (currentTab === "letters") el.innerHTML = tplLetters(p);
+  else if (currentTab === "referrals") el.innerHTML = tplReferrals(p);
+  else if (currentTab === "immunisations") el.innerHTML = tplImmunisations(p);
+  else if (currentTab === "social") el.innerHTML = tplSocial(p);
+  else if (currentTab === "notes") { el.innerHTML = tplNotes(p); wireNotesTab(p); }
+}
+
+function tplOverview(p){
+  return `
+    <div class="grid2">
+      <div class="card">
+        <h3>Active problems<span class="count">${p.problems.length}</span></h3>
+        ${p.problems.map(pr=>`<div style="margin-bottom:8px;font-size:13.5px;"><b>${pr.name}</b><div style="color:var(--text-soft);font-size:12px;">${pr.status}${pr.since!=="—" ? " · since "+pr.since : ""}</div></div>`).join("") || `<div class="empty-notes">No active problems recorded.</div>`}
+      </div>
+      <div class="card">
+        <h3>Household</h3>
+        <p style="font-size:13.5px;line-height:1.6;margin:0;">${p.household}</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Most recent clinical note</h3>
+      ${notesData[p.id][0] ? noteEntryHtml(notesData[p.id][0]) : `<div class="empty-notes">No notes recorded yet.</div>`}
+    </div>
+  `;
+}
+
+function tplProblems(p){
+  const rows = p.problems.map(pr=>`
+    <tr><td><b>${pr.name}</b></td><td>${pr.since}</td><td><span class="pill ${pr.status.includes('chronic')?'chronic':'active'}">${pr.status}</span></td></tr>
+  `).join("");
+  return `<div class="card"><h3>Problem list<span class="count">${p.problems.length}</span></h3>
+    <table class="rec"><tr><th>Problem</th><th>Onset / recorded</th><th>Status</th></tr>${rows || `<tr><td colspan="3" class="empty-notes">No problems recorded.</td></tr>`}</table>
+  </div>`;
+}
+
+function tplMeds(p){
+  const medRows = p.meds.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.dose}</td><td>${m.note}</td></tr>`).join("");
+  const allRows = p.allergies.map(a=>`<tr><td><b>${a.name}</b></td><td>${a.reaction}</td></tr>`).join("");
+  return `
+    <div class="card"><h3>Current medications<span class="count">${p.meds.length}</span></h3>
+      <table class="rec"><tr><th>Medication</th><th>Directions</th><th>Indication</th></tr>${medRows || `<tr><td colspan="3" class="empty-notes">No medications recorded.</td></tr>`}</table>
+    </div>
+    <div class="card"><h3>Allergies &amp; adverse reactions</h3>
+      <table class="rec"><tr><th>Substance</th><th>Reaction</th></tr>${allRows}</table>
+    </div>`;
+}
+
+function tplInvestigations(p){
+  const rows = (p.investigations||[]).map(inv=>`
+    <tr>
+      <td class="mono" style="white-space:nowrap;">${inv.date}</td>
+      <td><b>${inv.test}</b></td>
+      <td>${inv.result}</td>
+      <td style="color:var(--text-soft);">${inv.range}</td>
+      <td><span class="result-flag ${inv.flag}">${inv.flag==='normal' ? 'NORMAL' : inv.flag==='high' ? 'HIGH' : inv.flag==='low' ? 'LOW' : ''}</span></td>
+    </tr>
+    ${inv.report ? `<tr><td></td><td colspan="4"><div class="report-block">${inv.report}</div></td></tr>` : ""}
+  `).join("");
+  return `<div class="card"><h3>Investigations &amp; results<span class="count">${(p.investigations||[]).length}</span></h3>
+    <table class="rec"><tr><th>Date</th><th>Test</th><th>Result</th><th>Reference range</th><th>Flag</th></tr>
+    ${rows || `<tr><td colspan="5" class="empty-notes">No investigations recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr>`}
+    </table>
+  </div>`;
+}
+
+function tplLetters(p){
+  const entries = (p.letters||[]).map(l=>`
+    <div class="letter-entry">
+      <div class="letter-head"><span class="note-date">${l.date}</span></div>
+      <div class="letter-subject">${l.subject}</div>
+      <div class="letter-meta">From: ${l.from} &nbsp;→&nbsp; To: ${l.to}</div>
+      <div class="letter-body">${l.body}</div>
+    </div>
+  `).join("");
+  return `<div class="card"><h3>Letters &amp; correspondence<span class="count">${(p.letters||[]).length}</span></h3>
+    ${entries || `<div class="empty-notes">No letters recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</div>`}
+  </div>`;
+}
+
+function tplReferrals(p){
+  const rows = (p.referrals||[]).map(r=>`
+    <tr><td class="mono" style="white-space:nowrap;">${r.date}</td><td><b>${r.service}</b></td><td>${r.reason}</td>
+    <td><span class="pill ${r.status}">${r.status.charAt(0).toUpperCase()+r.status.slice(1)}</span></td></tr>
+  `).join("");
+  return `<div class="card"><h3>Referrals<span class="count">${(p.referrals||[]).length}</span></h3>
+    <table class="rec"><tr><th>Date</th><th>Service</th><th>Reason</th><th>Status</th></tr>
+    ${rows || `<tr><td colspan="4" class="empty-notes">No referrals recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr>`}
+    </table>
+  </div>`;
+}
+
+function tplImmunisations(p){
+  const rows = (p.immunisations||[]).map(i=>`
+    <tr><td class="mono" style="white-space:nowrap;">${i.date}</td><td><b>${i.vaccine}</b></td><td>${i.given_by}</td></tr>
+  `).join("");
+  return `<div class="card"><h3>Immunisations<span class="count">${(p.immunisations||[]).length}</span></h3>
+    <table class="rec"><tr><th>Date given</th><th>Vaccine</th><th>Given by</th></tr>
+    ${rows || `<tr><td colspan="3" class="empty-notes">No immunisations recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr>`}
+    </table>
+  </div>`;
+}
+
+function tplSocial(p){
+  return `
+    <div class="card"><h3>What's already strong — assets (ABCD)</h3>
+      <ul class="strengths-list">${p.strengths.map(s=>`<li><b>${s.t}</b>${s.d}</li>`).join("")}</ul>
+    </div>
+    <div class="card"><h3>Challenges to be aware of</h3>
+      <ul class="challenges-list">${p.challenges.map(c=>`<li><b>${c.t}</b>${c.d}</li>`).join("")}</ul>
+    </div>
+    <div class="card"><h3>Household context</h3><p style="font-size:13.5px;line-height:1.6;margin:0;">${p.household}</p></div>
+  `;
+}
+
+function noteEntryHtml(n){
+  return `<div class="note-entry">
+    <div class="note-head"><span class="note-date">${n.date}${n.time ? " · "+n.time : ""}</span><span class="note-type">${n.type}</span></div>
+    <div class="note-author">${n.author}${n.role ? " — "+n.role : ""}</div>
+    <div class="note-text">${n.text}</div>
+  </div>`;
+}
+
+function tplNotes(p){
+  const src = notesSource[p.id] === "imported" ? "Loaded from an imported Excel workbook" : "Showing default teaching notes — import the linked workbook to refresh";
+  const entries = notesData[p.id] || [];
+  return `
+    <div class="card">
+      <div class="notes-toolbar">
+        <div class="src">${src} · ${entries.length} entr${entries.length===1?"y":"ies"}</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" id="downloadTemplateBtn">Download blank template</button>
+          <button class="btn solid" id="importBtn">Import updated notes from Excel</button>
+        </div>
+      </div>
+      <div id="notesList">
+        ${entries.length ? entries.map(noteEntryHtml).join("") : `<div class="empty-notes">No clinical notes recorded for this patient yet.</div>`}
+      </div>
+    </div>
+    <div class="card" style="background:#FBFDFC;">
+      <h3>About this data source</h3>
+      <p style="font-size:12.5px;color:var(--text-soft);line-height:1.6;margin:0;">
+        Clinical notes here are kept in a linked Excel workbook (<b>Campbell_Family_Clinical_Notes.xlsx</b>), one sheet per patient, named exactly as in this system (e.g. "${p.sheet}").
+        Tutors add or edit rows in the workbook and re-import it here — nothing is uploaded anywhere; the file is read locally in this browser.
+      </p>
+    </div>
+  `;
+}
+
+function wireNotesTab(p){
+  document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('xlsxInput').click());
+  document.getElementById('downloadTemplateBtn').addEventListener('click', downloadTemplate);
+}
+
+/* =========================================================
+   EXCEL IMPORT (SheetJS) — reads the workbook client-side,
+   matches sheet names to patients, replaces their notes.
+   ========================================================= */
+document.getElementById('xlsxInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      let updatedCount = 0;
+      let matchedAny = false;
+
+      PATIENTS.forEach(p=>{
+        const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === p.sheet.toLowerCase());
+        if (!sheetName) return;
+        matchedAny = true;
+        const ws = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+        // rows[0] is the header row: Date | Time | Author | Role | Entry Type | Clinical Note
+        const parsed = [];
+        for (let i=1; i<rows.length; i++){
+          const r = rows[i];
+          if (!r || !r[0]) continue;
+          parsed.push({
+            date: String(r[0]).trim(),
+            time: String(r[1]||"").trim(),
+            author: String(r[2]||"").trim(),
+            role: String(r[3]||"").trim(),
+            type: String(r[4]||"").trim(),
+            text: String(r[5]||"").trim(),
+          });
+        }
+        parsed.sort((a,b)=> parseDMY(b.date) - parseDMY(a.date));
+        notesData[p.id] = parsed;
+        notesSource[p.id] = "imported";
+        trySaveNotes(p.id);
+        updatedCount++;
+      });
+
+      if (!matchedAny){
+        showToast("No matching patient sheets found in that file. Sheet tab names must match patient names exactly.");
+      } else {
+        showToast(`Imported clinical notes for ${updatedCount} patient${updatedCount===1?"":"s"} from ${file.name}.`);
+        if (currentTab === "notes") renderTabContent();
+        else renderBanner();
+      }
+    }catch(err){
+      showToast("Could not read that file. Please check it is a valid .xlsx workbook.");
+    }
+    e.target.value = "";
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+function parseDMY(str){
+  const m = String(str).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return 0;
+  return new Date(+m[3], +m[2]-1, +m[1]).getTime();
+}
+
+function downloadTemplate(){
+  const wb = XLSX.utils.book_new();
+  PATIENTS.forEach(p=>{
+    const header = [["Date","Time","Author","Role","Entry Type","Clinical Note"]];
+    const sample = (notesData[p.id]||[]).slice(0,1).map(n=>[n.date,n.time,n.author,n.role,n.type,n.text]);
+    const ws = XLSX.utils.aoa_to_sheet(header.concat(sample));
+    ws['!cols'] = [{wch:12},{wch:8},{wch:20},{wch:24},{wch:24},{wch:80}];
+    XLSX.utils.book_append_sheet(wb, ws, p.sheet);
+  });
+  XLSX.writeFile(wb, "Campbell_Family_Clinical_Notes_template.xlsx");
+  showToast("Template downloaded — keep the sheet names unchanged.");
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toastText').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 4200);
+}
+</script>
+</body>
+</html>
