@@ -280,7 +280,7 @@
 <div id="gate">
   <div class="gate-card">
     <div class="gate-mark">HV</div>
-    <h1>Heston Virtual Practice</h1>
+    <h1>SoM Virtual Practice</h1>
     <p class="sub">Virtual Patient Record — a teaching EPR for the Campbell family scenario. St Mary's University, School of Medicine.</p>
 
     <div class="field">
@@ -302,7 +302,7 @@
   <div class="teach-banner"><span class="dot"></span><strong>SIMULATED RECORD — FOR EDUCATIONAL USE ONLY.</strong>&nbsp;The Campbell family is a fictional teaching case. No real patient data is held in this system.</div>
 
   <div class="topbar">
-    <div class="brand"><span class="mark">HV</span> Heston Virtual Practice · Patient Record System</div>
+    <div class="brand"><span class="mark">HV</span> SoM Virtual Practice · Patient Record System</div>
     <div class="user"><span id="whoami"></span><button id="signOutBtn">Sign out</button></div>
   </div>
 
@@ -344,7 +344,7 @@ const PATIENTS = [
     id: "jean", sheet: "Jean Campbell", name: "Jean Campbell", initials: "JC",
     dob: "14/03/1969", age: 57, sex: "Female", nhs: "700 148 3260",
     address: "Flat 72, Convent Way Estate, Heston, TW5",
-    gp: "Dr A. Osei", practice: "Heston Virtual Practice",
+    gp: "Dr A. Osei", practice: "SoM Virtual Practice",
     flags: [{t:"Reduced mobility", k:"alert"}, {t:"Long-term conditions x3", k:"info"}],
     problems: [
       {name:"Type 2 diabetes mellitus", since:"2016", status:"Active — chronic"},
@@ -396,7 +396,7 @@ const PATIENTS = [
     id: "janet", sheet: "Janet Campbell", name: "Janet Campbell", initials: "JC",
     dob: "02/06/1998", age: 28, sex: "Female", nhs: "700 148 3277",
     address: "Flat 72, Convent Way Estate, Heston, TW5",
-    gp: "Dr A. Osei", practice: "Heston Virtual Practice",
+    gp: "Dr A. Osei", practice: "SoM Virtual Practice",
     flags: [{t:"CMHT follow-up", k:"info"}, {t:"Selective disclosure", k:"alert"}],
     problems: [
       {name:"Schizophrenia", since:"2024 (following first-episode psychosis)", status:"Active — community follow-up"},
@@ -440,7 +440,7 @@ const PATIENTS = [
     id: "natasha", sheet: "Natasha Campbell", name: "Natasha Campbell", initials: "NC",
     dob: "19/09/2000", age: 25, sex: "Female", nhs: "700 148 3284",
     address: "14 Elder Court, Wandsworth, SW18 (registered GP: Wandsworth practice — seen here as temporary patient)",
-    gp: "Dr F. Iqbal (temporary registration)", practice: "Heston Virtual Practice (visiting)",
+    gp: "Dr F. Iqbal (temporary registration)", practice: "SoM Virtual Practice (visiting)",
     flags: [{t:"Registered elsewhere", k:"info"}],
     problems: [
       {name:"No significant past medical history recorded at this practice", since:"—", status:"—"},
@@ -466,7 +466,7 @@ const PATIENTS = [
     id: "michael", sheet: "Michael Campbell", name: "Michael Campbell", initials: "MC",
     dob: "05/05/2005", age: 21, sex: "Male", nhs: "700 148 3291",
     address: "Flat 72, Convent Way Estate, Heston, TW5",
-    gp: "Dr A. Osei", practice: "Heston Virtual Practice",
+    gp: "Dr A. Osei", practice: "SoM Virtual Practice",
     flags: [{t:"Type 1 diabetes", k:"alert"}, {t:"Inconsistent routine", k:"alert"}],
     problems: [
       {name:"Type 1 diabetes mellitus", since:"Diagnosed as a teenager", status:"Active — chronic"},
@@ -485,7 +485,7 @@ const PATIENTS = [
       {date:"21/01/2026", test:"Capillary glucose (ED attendance)", result:"1.9 mmol/L on arrival", range:"4.0–7.0", flag:"low"},
     ],
     letters: [
-      {date:"22/01/2026", from:"Heston General Hospital, Emergency Department", to:"Dr A. Osei, GP", subject:"Emergency Department discharge summary — severe hypoglycaemia",
+      {date:"22/01/2026", from:"SoM General Hospital, Emergency Department", to:"Dr A. Osei, GP", subject:"Emergency Department discharge summary — severe hypoglycaemia",
        body:"Michael presented via ambulance with confusion and reduced consciousness, found to be severely hypoglycaemic (capillary glucose 1.9 mmol/L). Treated with IV dextrose with good recovery to baseline. Bystander history noted he had initially been restrained by police prior to ambulance arrival, having been mistaken for intoxicated; no injuries sustained. No further action taken by police. Discharged home same day with advice to follow up urgently with diabetes specialist nurse and consider review of insulin regimen and hypoglycaemia awareness."},
       {date:"14/01/2026", from:"J. Okafor, Diabetes Specialist Nurse", to:"Dr A. Osei, GP", subject:"Diabetes clinic letter — urgent review",
        body:"Seen urgently following ED attendance for severe hypoglycaemia. Continuous glucose monitor data reviewed together with Michael, showing a pattern of overnight lows following poor sleep. Agreed a targeted plan for higher-risk nights rather than a blanket dose change. Michael engaged well when the discussion focused on patterns he had identified himself. Will continue to support re routine and disclosure anxiety following the incident."},
