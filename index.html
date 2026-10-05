@@ -235,6 +235,12 @@
     display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;
   }
   .notes-toolbar .src{font-size:12px;color:var(--text-soft);}
+  .notes-search, .record-search{
+    width:min(320px, 100%);padding:8px 10px;border:1px solid var(--line);border-radius:5px;
+    background:#fff;color:var(--text);font-size:13px;font-family:inherit;
+  }
+  .notes-search:focus, .record-search:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+  .record-search{margin:0 0 12px;}
   .btn{
     display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:5px;
     border:1px solid var(--teal);background:#fff;color:var(--teal-dark);font-size:13px;font-weight:600;
@@ -302,8 +308,8 @@
 
   <div class="app-body">
     <div class="sidebar">
-      <div class="sidebar-head"><span class="label">CAMPBELL FAMILY — REGISTERED PATIENTS</span></div>
-      <div class="search"><input id="patientSearch" placeholder="Search patients…" /></div>
+      <div class="sidebar-head"><span class="label">REGISTERED PATIENTS</span></div>
+      <div class="search"><input id="patientSearch" placeholder="Search name, ID, age, DOB, or sex…" /></div>
       <ul class="patient-list" id="patientList"></ul>
       <div class="sidebar-foot">
         Teaching resource built for St Mary's University School of Medicine.<br/>
@@ -580,7 +586,9 @@ document.getElementById('signOutBtn').addEventListener('click', ()=>{
 function renderPatientList(filter=""){
   const list = document.getElementById('patientList');
   list.innerHTML = "";
-  PATIENTS.filter(p => p.name.toLowerCase().includes(filter.toLowerCase())).forEach(p=>{
+  const query = filter.trim().toLowerCase();
+  PATIENTS.filter(p => [p.name, p.nhs, p.sex, String(p.age), p.dob]
+    .some(value => value.toLowerCase().includes(query))).forEach(p=>{
     const li = document.createElement('li');
     li.className = 'patient-item' + (p.id===currentPatientId ? ' active':'');
     li.innerHTML = `<div class="p-avatar">${p.initials}</div>
@@ -593,6 +601,10 @@ document.getElementById('patientSearch').addEventListener('input', e=> renderPat
 
 function selectPatient(id){
   currentPatientId = id;
+  currentTab = "overview";
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.classList.toggle('active', tab.dataset.tab === currentTab);
+  });
   renderPatientList(document.getElementById('patientSearch').value);
   renderBanner();
   renderTabContent();
@@ -638,10 +650,56 @@ function renderTabContent(){
   if (currentTab === "overview") el.innerHTML = tplOverview(p);
   else if (currentTab === "problems") el.innerHTML = tplProblems(p);
   else if (currentTab === "meds") el.innerHTML = tplMeds(p);
-  else if (currentTab === "investigations") el.innerHTML = tplInvestigations(p);
-  else if (currentTab === "letters") el.innerHTML = tplLetters(p);
-  else if (currentTab === "referrals") el.innerHTML = tplReferrals(p);
-  else if (currentTab === "notes") el.innerHTML = tplNotes(p);
+  else if (currentTab === "investigations") {
+    el.innerHTML = tplInvestigations(p);
+    wireRecordSearch("investigationsSearch", "investigationsResults", "investigationsNoMatch");
+  }
+  else if (currentTab === "letters") {
+    el.innerHTML = tplLetters(p);
+    wireRecordSearch("lettersSearch", "lettersResults", "lettersNoMatch");
+  }
+  else if (currentTab === "referrals") {
+    el.innerHTML = tplReferrals(p);
+    wireRecordSearch("referralsSearch", "referralsResults", "referralsNoMatch");
+  }
+  else if (currentTab === "notes") {
+    el.innerHTML = tplNotes(p);
+    wireNotesSearch(p);
+  }
+}
+
+function wireNotesSearch(p){
+  const search = document.getElementById('notesSearch');
+  const list = document.getElementById('notesList');
+  search.addEventListener('input', ()=>{
+    const query = search.value.trim().toLowerCase();
+    const matches = (notesData[p.id] || []).filter(note =>
+      [note.date, note.time, note.author, note.role, note.type, note.text]
+        .some(value => String(value || "").toLowerCase().includes(query))
+    );
+    list.innerHTML = matches.length
+      ? matches.map(noteEntryHtml).join("")
+      : `<div class="empty-notes">${query ? "No clinical notes match your search." : "No clinical notes recorded for this patient yet."}</div>`;
+  });
+}
+
+function wireRecordSearch(inputId, resultsId, noMatchId){
+  const search = document.getElementById(inputId);
+  const results = document.getElementById(resultsId);
+  const noMatch = document.getElementById(noMatchId);
+  const records = results.querySelectorAll('[data-searchable-record]');
+  const emptyState = results.querySelector('[data-empty-state]');
+  search.addEventListener('input', ()=>{
+    const query = search.value.trim().toLowerCase();
+    let matchCount = 0;
+    records.forEach(record=>{
+      const matches = record.textContent.toLowerCase().includes(query);
+      record.hidden = !matches;
+      if (matches) matchCount++;
+    });
+    if (emptyState) emptyState.hidden = Boolean(query) && records.length > 0;
+    noMatch.hidden = !query || matchCount > 0 || records.length === 0;
+  });
 }
 
 function tplOverview(p){
@@ -693,6 +751,7 @@ function tplAllergyCard(p){
 
 function tplInvestigations(p){
   const rows = (p.investigations||[]).map(inv=>`
+    <tbody data-searchable-record>
     <tr>
       <td class="mono" style="white-space:nowrap;">${inv.date}</td>
       <td><b>${inv.test}</b></td>
@@ -701,17 +760,20 @@ function tplInvestigations(p){
       <td><span class="result-flag ${inv.flag}">${inv.flag==='normal' ? 'NORMAL' : inv.flag==='high' ? 'HIGH' : inv.flag==='low' ? 'LOW' : ''}</span></td>
     </tr>
     ${inv.report ? `<tr><td></td><td colspan="4"><div class="report-block">${inv.report}</div></td></tr>` : ""}
+    </tbody>
   `).join("");
   return `<div class="card"><h3>Investigations &amp; results<span class="count">${(p.investigations||[]).length}</span></h3>
-    <table class="rec"><tr><th>Date</th><th>Test</th><th>Result</th><th>Reference range</th><th>Flag</th></tr>
-    ${rows || `<tr><td colspan="5" class="empty-notes">No investigations recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr>`}
+    <input class="record-search" id="investigationsSearch" type="search" placeholder="Search investigations…" aria-label="Search investigations" />
+    <table class="rec" id="investigationsResults"><thead><tr><th>Date</th><th>Test</th><th>Result</th><th>Reference range</th><th>Flag</th></tr></thead>
+      ${rows || `<tbody><tr data-empty-state><td colspan="5" class="empty-notes">No investigations recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr></tbody>`}
+      <tbody><tr id="investigationsNoMatch" hidden><td colspan="5" class="empty-notes">No investigations match your search.</td></tr></tbody>
     </table>
   </div>`;
 }
 
 function tplLetters(p){
   const entries = (p.letters||[]).map(l=>`
-    <div class="letter-entry">
+    <div class="letter-entry" data-searchable-record>
       <div class="letter-head"><span class="note-date">${l.date}</span></div>
       <div class="letter-subject">${l.subject}</div>
       <div class="letter-meta">From: ${l.from} &nbsp;→&nbsp; To: ${l.to}</div>
@@ -719,18 +781,24 @@ function tplLetters(p){
     </div>
   `).join("");
   return `<div class="card"><h3>Letters &amp; correspondence<span class="count">${(p.letters||[]).length}</span></h3>
-    ${entries || `<div class="empty-notes">No letters recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</div>`}
+    <input class="record-search" id="lettersSearch" type="search" placeholder="Search letters…" aria-label="Search letters" />
+    <div id="lettersResults">${entries || `<div class="empty-notes" data-empty-state>No letters recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</div>`}
+      <div id="lettersNoMatch" class="empty-notes" hidden>No letters match your search.</div>
+    </div>
   </div>`;
 }
 
 function tplReferrals(p){
   const rows = (p.referrals||[]).map(r=>`
-    <tr><td class="mono" style="white-space:nowrap;">${r.date}</td><td><b>${r.service}</b></td><td>${r.reason}</td>
+    <tr data-searchable-record><td class="mono" style="white-space:nowrap;">${r.date}</td><td><b>${r.service}</b></td><td>${r.reason}</td>
     <td><span class="pill ${r.status}">${r.status.charAt(0).toUpperCase()+r.status.slice(1)}</span></td></tr>
   `).join("");
   return `<div class="card"><h3>Referrals<span class="count">${(p.referrals||[]).length}</span></h3>
-    <table class="rec"><tr><th>Date</th><th>Service</th><th>Reason</th><th>Status</th></tr>
-    ${rows || `<tr><td colspan="4" class="empty-notes">No referrals recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr>`}
+    <input class="record-search" id="referralsSearch" type="search" placeholder="Search referrals…" aria-label="Search referrals" />
+    <table class="rec"><thead><tr><th>Date</th><th>Service</th><th>Reason</th><th>Status</th></tr></thead>
+      <tbody id="referralsResults">${rows || `<tr data-empty-state><td colspan="4" class="empty-notes">No referrals recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr>`}
+        <tr id="referralsNoMatch" hidden><td colspan="4" class="empty-notes">No referrals match your search.</td></tr>
+      </tbody>
     </table>
   </div>`;
 }
@@ -760,10 +828,9 @@ function tplNotes(p){
     <div class="card">
       <div class="notes-toolbar">
         <div class="src">Showing accurate teaching notes as of Week 1.</div>
+        <input class="notes-search" id="notesSearch" type="search" placeholder="Search clinical notes…" aria-label="Search clinical notes" />
       </div>
-      <div id="notesList">
-        ${entries.length ? entries.map(noteEntryHtml).join("") : `<div class="empty-notes">No clinical notes recorded for this patient yet.</div>`}
-      </div>
+      <div id="notesList">${entries.length ? entries.map(noteEntryHtml).join("") : `<div class="empty-notes">No clinical notes recorded for this patient yet.</div>`}</div>
     </div>
     <div class="card" style="background:#F7FBFC;">
       <h3>About this data source</h3>
