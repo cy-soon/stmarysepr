@@ -4,25 +4,26 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SoM Virtual Practice — Virtual Patient Record</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
   :root{
-    --ink:#16323E;
-    --ink-soft:#2A4B58;
-    --teal:#1F6F5C;
-    --teal-dark:#155447;
+    --ink:#003B5C;
+    --ink-soft:#12556F;
+    --nav-bg:#042D4F;
+    --teal:#00B7F0;
+    --teal-dark:#003B5C;
+    --teal-bg:#E5F8FE;
     --amber:#B8791E;
     --amber-bg:#FCF1DE;
     --alert:#A3352B;
     --alert-bg:#FBEAE8;
-    --bg:#F2F6F5;
+    --bg:#F2F8FA;
     --panel:#FFFFFF;
-    --line:#DCE6E3;
-    --text:#152420;
-    --text-soft:#5B6E68;
-    --text-faint:#8A9B96;
+    --line:#D8E7EC;
+    --text:#152B35;
+    --text-soft:#526C78;
+    --text-faint:#8298A1;
     --radius:6px;
   }
   *{box-sizing:border-box;}
@@ -34,7 +35,7 @@
     -webkit-font-smoothing:antialiased;
   }
   .mono{font-family:'IBM Plex Mono', monospace;}
-  a{color:var(--teal);}
+  a{color:var(--ink-soft);}
 
   /* ---------- Teaching banner (always visible) ---------- */
   .teach-banner{
@@ -57,9 +58,7 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    background:
-      radial-gradient(circle at 15% 10%, rgba(31,111,92,0.10), transparent 45%),
-      linear-gradient(180deg, #0F2530 0%, #16323E 55%, #1B3E4C 100%);
+    background:#042D4F;
   }
   .gate-card{
     width:min(420px, 92vw);
@@ -69,11 +68,8 @@
     box-shadow:0 30px 60px -20px rgba(10,25,30,.55);
   }
   .gate-mark{
-    width:40px;height:40px;border-radius:9px;
-    background:var(--teal);
-    display:flex;align-items:center;justify-content:center;
-    color:#fff;font-weight:700;font-size:17px;margin-bottom:18px;
-    font-family:'IBM Plex Mono',monospace;
+    display:block;width:min(180px, 100%);height:auto;
+    margin-bottom:18px;
   }
   .gate-card h1{font-size:19px;margin:0 0 4px;color:var(--ink);letter-spacing:-.01em;}
   .gate-card p.sub{margin:0 0 22px;color:var(--text-soft);font-size:13.5px;line-height:1.5;}
@@ -81,14 +77,14 @@
   .field label{display:block;font-size:12px;color:var(--text-soft);margin-bottom:5px;font-weight:500;}
   .field input, .field select{
     width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:5px;
-    font-size:14px;font-family:inherit;color:var(--text);background:#FBFDFC;
+    font-size:14px;font-family:inherit;color:var(--text);background:#F7FBFC;
   }
   .field input:focus, .field select:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
   .gate-btn{
     width:100%;padding:11px;border:none;border-radius:5px;background:var(--teal);
     color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit;
   }
-  .gate-btn:hover{background:var(--teal-dark);}
+  .gate-btn:hover{background:#009BCC;}
   .gate-note{
     margin-top:18px;padding:11px 12px;background:var(--amber-bg);border:1px solid #E6C486;
     border-radius:5px;font-size:12px;color:#5A3E10;line-height:1.5;
@@ -99,7 +95,7 @@
   .app-body{display:flex;flex:1;min-height:0;}
 
   .topbar{
-    background:var(--ink);
+    background:var(--nav-bg);
     color:#fff;
     padding:10px 20px;
     display:flex;align-items:center;justify-content:space-between;
@@ -107,49 +103,49 @@
   }
   .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.01em;}
   .topbar .brand .mark{
-    width:24px;height:24px;border-radius:6px;background:var(--teal);
-    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
-    font-family:'IBM Plex Mono',monospace;
+    display:block;width:72px;height:35px;object-fit:contain;
+    padding:3px;background:#fff;border-radius:4px;flex:none;
   }
-  .topbar .user{display:flex;align-items:center;gap:14px;color:#CBDAD6;}
+  .topbar .user{display:flex;align-items:center;gap:14px;color:#D2E8F0;}
   .topbar .user button{
-    background:transparent;border:1px solid #3C5560;color:#CBDAD6;border-radius:4px;
+    background:transparent;border:1px solid #39718A;color:#D2E8F0;border-radius:4px;
     padding:5px 10px;font-size:12px;cursor:pointer;font-family:inherit;
   }
-  .topbar .user button:hover{border-color:#5C7A85;color:#fff;}
+  .topbar .user button:hover{border-color:var(--teal);color:#fff;}
 
   /* ---------- Sidebar ---------- */
   .sidebar{
-    width:270px;flex:none;background:var(--ink);color:#fff;
+    width:270px;flex:none;background:var(--nav-bg);color:#fff;
     display:flex;flex-direction:column;padding:16px 0 0;
   }
   .sidebar-head{padding:0 16px 12px;}
-  .sidebar-head .label{font-size:11px;color:#8FA6AC;text-transform:none;letter-spacing:.02em;}
+  .sidebar-head .label{font-size:11px;color:#9FC5D4;text-transform:none;letter-spacing:.02em;}
   .search{margin:8px 16px 10px;}
   .search input{
-    width:100%;padding:7px 10px;border-radius:5px;border:1px solid #2E4C57;
-    background:#0F2530;color:#fff;font-size:13px;font-family:inherit;
+    width:100%;padding:7px 10px;border-radius:5px;border:1px solid #39718A;
+    background:#002B43;color:#fff;font-size:13px;font-family:inherit;
   }
-  .search input::placeholder{color:#6E8890;}
+  .search input::placeholder{color:#9FC5D4;}
   .patient-list{list-style:none;margin:0;padding:0 8px 16px;overflow-y:auto;}
   .patient-item{
     padding:10px 10px;border-radius:6px;cursor:pointer;margin-bottom:3px;
     display:flex;gap:10px;align-items:center;
   }
-  .patient-item:hover{background:#1E3E4A;}
-  .patient-item.active{background:var(--teal);}
+  .patient-item:hover{background:#12556F;}
+  .patient-item.active{background:var(--ink);box-shadow:inset 3px 0 var(--teal);}
   .p-avatar{
-    width:32px;height:32px;border-radius:50%;background:#2E4C57;flex:none;
+    width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;flex:none;
     display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
     font-family:'IBM Plex Mono',monospace;
   }
-  .patient-item.active .p-avatar{background:rgba(255,255,255,.25);}
+  .patient-item.active .p-avatar{background:var(--teal);color:#fff;}
   .p-name{font-size:13.5px;font-weight:600;line-height:1.25;}
-  .p-meta{font-size:11px;color:#A9C0C4;}
-  .patient-item.active .p-meta{color:#DCEFE9;}
+  .p-meta{font-size:11px;color:#B4D0DA;}
+  .patient-item.active .p-meta{color:#DDF6FC;}
   .sidebar-foot{
-    margin-top:auto;padding:12px 16px;border-top:1px solid #24424D;font-size:11px;color:#87A0A6;line-height:1.5;
+    margin-top:auto;padding:12px 16px;border-top:1px solid #24546B;font-size:11px;color:#9FC5D4;line-height:1.5;
   }
+  .sidebar-attribution{display:block;margin-top:8px;font-size:10px;color:#B4D0DA;}
 
   /* ---------- Main panel ---------- */
   .main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg);overflow-y:auto;}
@@ -170,7 +166,7 @@
     font-size:11px;padding:4px 9px;border-radius:20px;font-weight:600;white-space:nowrap;
   }
   .flag.alert{background:var(--alert-bg);color:var(--alert);}
-  .flag.info{background:#E6EFEC;color:var(--teal-dark);}
+  .flag.info{background:var(--teal-bg);color:var(--teal-dark);}
 
   .tabs{
     display:flex;gap:2px;background:var(--panel);border-bottom:1px solid var(--line);
@@ -196,16 +192,16 @@
     text-align:left;font-size:11.5px;color:var(--text-soft);font-weight:600;
     padding:6px 10px;border-bottom:1px solid var(--line);
   }
-  table.rec td{padding:9px 10px;border-bottom:1px solid #EEF3F1;vertical-align:top;}
+  table.rec td{padding:9px 10px;border-bottom:1px solid #EDF4F6;vertical-align:top;}
   table.rec tr:last-child td{border-bottom:none;}
   .pill{
-    display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#E6EFEC;
+    display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--teal-bg);
     color:var(--teal-dark);font-weight:600;
   }
-  .pill.active{background:#E6EFEC;color:var(--teal-dark);}
+  .pill.active{background:var(--teal-bg);color:var(--teal-dark);}
   .pill.chronic{background:#EFEBE0;color:#7A5B1E;}
   .pill.pending{background:var(--amber-bg);color:var(--amber);}
-  .pill.seen, .pill.complete{background:#E6EFEC;color:var(--teal-dark);}
+  .pill.seen, .pill.complete{background:var(--teal-bg);color:var(--teal-dark);}
   .pill.discharged{background:#EAEDF0;color:#5B6E68;}
 
   .result-flag{font-weight:700;font-family:'IBM Plex Mono',monospace;font-size:12px;}
@@ -214,7 +210,7 @@
   .result-flag.low{color:var(--amber);}
 
   .letter-entry{
-    border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;background:#FBFDFC;
+    border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;background:#F7FBFC;
   }
   .letter-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;flex-wrap:wrap;}
   .letter-subject{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px;}
@@ -244,17 +240,15 @@
     border:1px solid var(--teal);background:#fff;color:var(--teal-dark);font-size:13px;font-weight:600;
     cursor:pointer;font-family:inherit;
   }
-  .btn:hover{background:#EAF3F0;}
-  .btn.solid{background:var(--teal);color:#fff;}
-  .btn.solid:hover{background:var(--teal-dark);}
-  #xlsxInput{display:none;}
-
+  .btn:hover{background:var(--teal-bg);}
+  .btn.solid{background:var(--ink);color:#fff;}
+  .btn.solid:hover{background:#002B43;}
   .note-entry{
-    border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;background:#FBFDFC;
+    border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;background:#F7FBFC;
   }
   .note-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
   .note-date{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink);font-weight:600;}
-  .note-type{font-size:11px;background:#E6EFEC;color:var(--teal-dark);padding:2px 8px;border-radius:20px;font-weight:600;}
+  .note-type{font-size:11px;background:var(--teal-bg);color:var(--teal-dark);padding:2px 8px;border-radius:20px;font-weight:600;}
   .note-author{font-size:12px;color:var(--text-soft);margin-bottom:8px;}
   .note-text{font-size:13.5px;line-height:1.6;color:var(--text);}
   .empty-notes{padding:24px;text-align:center;color:var(--text-soft);font-size:13px;}
@@ -269,7 +263,7 @@
   .toast .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);flex:none;}
 
   ::-webkit-scrollbar{width:9px;height:9px;}
-  ::-webkit-scrollbar-thumb{background:#C7D5D1;border-radius:5px;}
+  ::-webkit-scrollbar-thumb{background:#B8D6E0;border-radius:5px;}
 
   .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
 </style>
@@ -279,9 +273,9 @@
 <!-- ======================= SIGN-IN GATE ======================= -->
 <div id="gate">
   <div class="gate-card">
-    <div class="gate-mark">HV</div>
-    <h1>SoM Virtual Practice</h1>
-    <p class="sub">Virtual Patient Record — a teaching EPR for the Campbell family scenario. St Mary's University, School of Medicine.</p>
+    <img class="gate-mark" src="assets/stmarys-logo.png" alt="St Mary's University London" />
+    <h1>LV Family Practice</h1>
+    <p class="sub">Teaching Electronic Patient Record (EPR) for St Mary's University School of Medicine students.</p>
 
     <div class="field">
       <label for="studentName">Your name</label>
@@ -293,7 +287,7 @@
     </div>
     <button class="gate-btn" id="enterBtn">Open patient record system</button>
 
-    <div class="gate-note">This is a simulated record for teaching purposes only. The Campbell family is fictional — no identifiable individual is represented. Treat it with the same care as a real record.</div>
+    <div class="gate-note">This is a simulated record for teaching purposes only. All patient details are fictional — no identifiable individual is represented. Treat it with the same care as a real record.</div>
   </div>
 </div>
 
@@ -302,7 +296,7 @@
   <div class="teach-banner"><span class="dot"></span><strong>SIMULATED RECORD — FOR EDUCATIONAL USE ONLY.</strong>&nbsp;The Campbell family is a fictional teaching case. No real patient data is held in this system.</div>
 
   <div class="topbar">
-    <div class="brand"><span class="mark">HV</span> SoM Virtual Practice · Patient Record System</div>
+    <div class="brand"><img class="mark" src="assets/stmarys-logo.png" alt="St Mary's University London" /> LV Family Practice · Patient Record System</div>
     <div class="user"><span id="whoami"></span><button id="signOutBtn">Sign out</button></div>
   </div>
 
@@ -311,28 +305,28 @@
       <div class="sidebar-head"><span class="label">CAMPBELL FAMILY — REGISTERED PATIENTS</span></div>
       <div class="search"><input id="patientSearch" placeholder="Search patients…" /></div>
       <ul class="patient-list" id="patientList"></ul>
-      <div class="sidebar-foot">Teaching resource built for St Mary's University SoM.<br/>Clinical notes are refreshed from a linked Excel workbook — see the Clinical Notes tab.</div>
+      <div class="sidebar-foot">
+        Teaching resource built for St Mary's University School of Medicine.<br/>
+        <span class="sidebar-attribution">Developed by Dr Chee Yen Soon, Lecturer in Medical Education · Published <time datetime="2026-10">October 2026</time></span>
+      </div>
     </div>
 
     <div class="main">
       <div class="patient-banner" id="patientBanner"></div>
       <div class="tabs" id="tabs">
         <div class="tab active" data-tab="overview">Overview</div>
+        <div class="tab" data-tab="notes">Clinical Notes</div>
         <div class="tab" data-tab="problems">Problem List</div>
         <div class="tab" data-tab="meds">Medications &amp; Allergies</div>
         <div class="tab" data-tab="investigations">Investigations</div>
         <div class="tab" data-tab="letters">Letters</div>
         <div class="tab" data-tab="referrals">Referrals</div>
-        <div class="tab" data-tab="immunisations">Immunisations</div>
-        <div class="tab" data-tab="social">Social &amp; Family Context</div>
-        <div class="tab" data-tab="notes">Clinical Notes</div>
       </div>
       <div class="content" id="content"></div>
     </div>
   </div>
 </div>
 
-<input type="file" id="xlsxInput" accept=".xlsx,.xls" />
 <div class="toast" id="toast"><span class="dot"></span><span id="toastText"></span></div>
 
 <script>
@@ -342,9 +336,9 @@
 const PATIENTS = [
   {
     id: "jean", sheet: "Jean Campbell", name: "Jean Campbell", initials: "JC",
-    dob: "14/03/1969", age: 57, sex: "Female", nhs: "700 148 3260",
-    address: "Flat 72, Convent Way Estate, Heston, TW5",
-    gp: "Dr A. Osei", practice: "SoM Virtual Practice",
+    dob: "28/09/1969", age: 57, sex: "Female", nhs: "453602517",
+    address: "Flat 72, Convent Way Estate, Heston, UB2",
+    gp: "Dr S. Kumar", practice: "SoM Virtual Practice",
     flags: [{t:"Reduced mobility", k:"alert"}, {t:"Long-term conditions x3", k:"info"}],
     problems: [
       {name:"Type 2 diabetes mellitus", since:"2016", status:"Active — chronic"},
@@ -366,9 +360,9 @@ const PATIENTS = [
       {date:"20/11/2025", test:"Knee X-ray (bilateral)", result:"Report below", range:"—", flag:"normal", report:"Moderate joint space narrowing and osteophyte formation at both knees, right slightly worse than left, consistent with moderate osteoarthritis. No fracture. Correlate clinically."},
     ],
     letters: [
-      {date:"25/11/2025", from:"Mr D. Patel, Orthopaedic Consultant", to:"Dr A. Osei, GP", subject:"Outpatient clinic letter — bilateral knee osteoarthritis",
+      {date:"25/11/2025", from:"Dr D. Sunnucks, Orthopaedic Consultant", to:"Dr S. Kumar, GP", subject:"Outpatient clinic letter — bilateral knee osteoarthritis",
        body:"Thank you for referring Mrs Campbell. Examination confirms moderate bilateral knee osteoarthritis, right greater than left, with reduced range of movement but stable ligaments. Recommend continued physiotherapy and weight-bearing exercise as tolerated. Surgery not indicated at this stage given her mobility remains functional at home. Happy to review again if symptoms progress or if conservative measures fail."},
-      {date:"03/09/2025", from:"Diabetes Eye Screening Service", to:"Dr A. Osei, GP", subject:"Diabetic retinopathy screening result",
+      {date:"03/09/2025", from:"Diabetes Eye Screening Service", to:"Dr S. Kumar, GP", subject:"Diabetic retinopathy screening result",
        body:"Annual diabetic eye screening completed. No signs of diabetic retinopathy in either eye (R0/M0 bilaterally). Routine recall in 12 months."},
     ],
     referrals: [
@@ -394,9 +388,9 @@ const PATIENTS = [
   },
   {
     id: "janet", sheet: "Janet Campbell", name: "Janet Campbell", initials: "JC",
-    dob: "02/06/1998", age: 28, sex: "Female", nhs: "700 148 3277",
-    address: "Flat 72, Convent Way Estate, Heston, TW5",
-    gp: "Dr A. Osei", practice: "SoM Virtual Practice",
+    dob: "03/06/1998", age: 28, sex: "Female", nhs: "418406199",
+    address: "Flat 72, Convent Way Estate, Heston, UB2",
+    gp: "Dr N. Merrifield", practice: "SoM Virtual Practice",
     flags: [{t:"CMHT follow-up", k:"info"}, {t:"Selective disclosure", k:"alert"}],
     problems: [
       {name:"Schizophrenia", since:"2024 (following first-episode psychosis)", status:"Active — community follow-up"},
@@ -412,9 +406,9 @@ const PATIENTS = [
       {date:"11/11/2025", test:"ECG", result:"Normal sinus rhythm, QTc within normal limits", range:"—", flag:"normal"},
     ],
     letters: [
-      {date:"14/03/2024", from:"Dr P. Nkomo, Consultant Psychiatrist", to:"Dr A. Osei, GP", subject:"Discharge summary — inpatient admission",
+      {date:"14/03/2024", from:"Dr A. Bielinska, Consultant Psychiatrist", to:"Dr N. Merrifield, GP", subject:"Discharge summary — inpatient admission",
        body:"Janet was admitted informally following a first episode of psychosis with severe distress. Risk assessment on discharge showed no ongoing risk to self or others. Diagnosis of schizophrenia given following MDT review. Discharged home to family support with community mental health team follow-up and antipsychotic medication commenced. Please continue routine physical health monitoring in primary care alongside CMHT input."},
-      {date:"20/08/2025", from:"Dr P. Nkomo, Consultant Psychiatrist", to:"Dr A. Osei, GP", subject:"Community mental health clinic letter",
+      {date:"20/08/2025", from:"Dr A. Bielinska, Consultant Psychiatrist", to:"Dr N. Merrifield, GP", subject:"Community mental health clinic letter",
        body:"Janet continues to do well in the community. No relapse indicators. She has begun a phased return to teaching, supported by occupational health. She remains selective about disclosure at work; this has been discussed and is respected as her choice. Continue current medication; next CMHT review in 8 weeks."},
     ],
     referrals: [
@@ -438,16 +432,18 @@ const PATIENTS = [
   },
   {
     id: "natasha", sheet: "Natasha Campbell", name: "Natasha Campbell", initials: "NC",
-    dob: "19/09/2000", age: 25, sex: "Female", nhs: "700 148 3284",
+    dob: "15/01/2001", age: 25, sex: "Female", nhs: "636952108",
     address: "14 Elder Court, Wandsworth, SW18 (registered GP: Wandsworth practice — seen here as temporary patient)",
-    gp: "Dr F. Iqbal (temporary registration)", practice: "SoM Virtual Practice (visiting)",
+    gp: "Dr M. Bajaj (temporary registration)", practice: "SoM Virtual Practice (visiting)",
     flags: [{t:"Registered elsewhere", k:"info"}],
     problems: [
       {name:"No significant past medical history recorded at this practice", since:"—", status:"—"},
     ],
     meds: [],
     allergies: [{name:"Not recorded at this practice", reaction:"—"}],
-    investigations: [],
+    investigations: [
+      {date:"18/12/2025", test:"Blood pressure", result:"118/74 mmHg", range:"<140/90", flag:"normal"},
+    ],
     letters: [],
     referrals: [],
     immunisations: [],
@@ -464,13 +460,13 @@ const PATIENTS = [
   },
   {
     id: "michael", sheet: "Michael Campbell", name: "Michael Campbell", initials: "MC",
-    dob: "05/05/2005", age: 21, sex: "Male", nhs: "700 148 3291",
-    address: "Flat 72, Convent Way Estate, Heston, TW5",
+    dob: "18/12/2004", age: 21, sex: "Male", nhs: "652485734",
+    address: "Flat 72, Convent Way Estate, Heston, UB2",
     gp: "Dr A. Osei", practice: "SoM Virtual Practice",
-    flags: [{t:"Type 1 diabetes", k:"alert"}, {t:"Inconsistent routine", k:"alert"}],
+    flags: [{t:"Insulin-dependent", k:"alert"}],
     problems: [
       {name:"Type 1 diabetes mellitus", since:"Diagnosed as a teenager", status:"Active — chronic"},
-      {name:"Anxiety related to a previous police/hypoglycaemia incident", since:"2025", status:"Active"},
+      {name:"Anxiety about health (finding)", since:"2025", status:"Active"},
     ],
     meds: [
       {name:"Insulin glargine", dose:"Once daily, as agreed with diabetes specialist nurse", note:"Basal insulin"},
@@ -512,35 +508,34 @@ const PATIENTS = [
   },
 ];
 
-/* Default clinical notes — mirrors the linked Excel workbook at first load.
-   Re-importing the workbook (Clinical Notes tab) overwrites this per patient. */
+/* Default fictional clinical notes shown to students. */
 const DEFAULT_NOTES = {
   jean: [
-    {date:"03/02/2026", time:"09:40", author:"Dr A. Osei", role:"GP", type:"GP Consultation",
+    {date:"03/02/2026", time:"09:40", author:"Dr S. Kumar", role:"GP", type:"GP Consultation",
      text:"Reviewed for knee pain and mobility. Reports pain worse on stairs and when the estate lift is out of service, limiting shopping and church attendance. Discussed weight-bearing exercise adapted to home space and pain levels. Continues metformin and amlodipine, good understanding of both. Declined referral to weight-management group for now; open to revisiting. Safety-netted re worsening pain or swelling."},
     {date:"14/01/2026", time:"11:15", author:"S. Whitlock", role:"Practice Nurse", type:"Diabetes Annual Review",
      text:"HbA1c stable. Feet checked, sensation intact, no ulceration. Discussed diet in a way that reflected Jean's own cooking rather than generic advice; she described swaps she has already made. Blood pressure within target on current amlodipine dose. Reminded re annual retinal screening appointment."},
     {date:"02/12/2025", time:"16:00", author:"R. Ferreira", role:"Physiotherapist", type:"MSK Physiotherapy Review",
      text:"Bilateral knee osteoarthritis, functionally limiting on bad days. Home exercise programme issued, adapted for a small flat and for days when descending seven floors is not feasible. Discussed a walking aid; Jean will consider this and discuss with family first."},
-    {date:"19/11/2025", time:"10:05", author:"Dr A. Osei", role:"GP", type:"Telephone Triage",
+    {date:"19/11/2025", time:"10:05", author:"Dr S. Kumar", role:"GP", type:"Telephone Triage",
      text:"Called by Jean regarding a missed hospital outpatient appointment — the lift was out of service that morning. Rebooked appointment and flagged to admin to note lift access as a recurring barrier for this patient. Jean was clearly frustrated but engaged constructively; no clinical concerns raised today."},
     {date:"30/09/2025", time:"13:30", author:"L. Adeyemi", role:"Social Prescribing Link Worker", type:"Social Prescribing / Housing",
      text:"Met Jean following GP referral. Discussed Convent Way regeneration uncertainty and its effect on her wellbeing. Jean is well connected locally (church, neighbours) and was clear she wants information, not a service to 'manage' her. Provided details of the residents' meeting and estate renewal contact."},
   ],
   janet: [
-    {date:"27/01/2026", time:"14:20", author:"Dr P. Nkomo", role:"Consultant Psychiatrist", type:"Community Mental Health Review",
+    {date:"27/01/2026", time:"14:20", author:"Dr A. Bielinska", role:"Consultant Psychiatrist", type:"Community Mental Health Review",
      text:"Routine follow-up in the community mental health team. Mental state stable, no psychotic symptoms. Continues part-time phased return to teaching. Janet raised concern about disclosure at work and fear of being seen as 'unsafe' — discussed at length. Continues current antipsychotic; tolerating well, no extrapyramidal side effects noted. Agreed to review again in 6 weeks."},
-    {date:"05/01/2026", time:"09:00", author:"K. Osborne", role:"Community Mental Health Nurse", type:"Care Coordination Review",
+    {date:"05/01/2026", time:"09:00", author:"M. Martin", role:"Community Mental Health Nurse", type:"Care Coordination Review",
      text:"Home visit as part of phased return support. Janet is organised and proactive, brings her own written questions to appointments. Sleep and routine protected by current bedroom arrangement at home. No current safeguarding concerns. Discussed peer support group; Janet interested but time-limited by work and caring responsibilities for Michael."},
-    {date:"11/11/2025", time:"15:45", author:"Dr P. Nkomo", role:"Consultant Psychiatrist", type:"Medication Review",
+    {date:"11/11/2025", time:"15:45", author:"Dr A. Bielinska", role:"Consultant Psychiatrist", type:"Medication Review",
      text:"Medication review — no changes made. Janet reports feeling 'high functioning' language from colleagues sometimes makes it harder to ask for help. Discussed how this can mask ongoing effort and fatigue. Agreed a plan for what Janet will say if she needs to step back from a shift."},
-    {date:"22/09/2025", time:"10:30", author:"Dr A. Osei", role:"GP", type:"GP Consultation",
+    {date:"22/09/2025", time:"10:30", author:"Dr N. Merrifield", role:"GP", type:"GP Consultation",
      text:"Attended with Jean for a joint appointment about shared caring responsibilities. Janet is managing well but flagged the physical and emotional load of supporting both her mother and Michael. Discussed carer's assessment; Janet will consider this."},
   ],
   natasha: [
-    {date:"18/12/2025", time:"12:10", author:"Dr F. Iqbal", role:"GP", type:"GP Consultation (temporary registration)",
+    {date:"18/12/2025", time:"12:10", author:"Dr M. Bajaj", role:"GP", type:"GP Consultation (temporary registration)",
      text:"Natasha is registered with a GP practice in Wandsworth; seen today as a temporary patient while visiting family in Heston. Attended primarily to discuss how to support her mother Jean with an upcoming hospital appointment. No new health concerns for Natasha herself today."},
-    {date:"03/08/2025", time:"09:50", author:"Dr F. Iqbal", role:"GP", type:"Telephone Triage",
+    {date:"03/08/2025", time:"09:50", author:"Dr M. Bajaj", role:"GP", type:"Telephone Triage",
      text:"Called on behalf of the family to query an appointment letter for Jean that had gone to the wrong address. Query resolved and passed to administrative team. Natasha noted she often coordinates this kind of admin for the family alongside her own work and childcare commitments."},
   ],
   michael: [
@@ -556,32 +551,8 @@ const DEFAULT_NOTES = {
 };
 
 let notesData = JSON.parse(JSON.stringify(DEFAULT_NOTES));
-let notesSource = { jean:"default", janet:"default", natasha:"default", michael:"default" };
 let currentPatientId = PATIENTS[0].id;
 let currentTab = "overview";
-
-/* =========================================================
-   BEST-EFFORT PERSISTENCE (Claude artifact storage where available)
-   Falls back silently to in-memory only if unavailable — never
-   uses localStorage/sessionStorage.
-   ========================================================= */
-async function tryRestoreNotes(){
-  if (!window.storage) return;
-  for (const p of PATIENTS){
-    try{
-      const r = await window.storage.get('notes:' + p.id, false);
-      if (r && r.value){
-        const parsed = JSON.parse(r.value);
-        if (Array.isArray(parsed)) { notesData[p.id] = parsed; notesSource[p.id] = "imported"; }
-      }
-    }catch(e){ /* no saved value yet — fine */ }
-  }
-}
-async function trySaveNotes(patientId){
-  if (!window.storage) return;
-  try{ await window.storage.set('notes:' + patientId, JSON.stringify(notesData[patientId]), false); }
-  catch(e){ /* best effort only */ }
-}
 
 /* =========================================================
    GATE
@@ -589,13 +560,12 @@ async function trySaveNotes(patientId){
 document.getElementById('enterBtn').addEventListener('click', enterApp);
 document.getElementById('studentName').addEventListener('keydown', e=>{ if(e.key==='Enter') enterApp(); });
 
-async function enterApp(){
+function enterApp(){
   const name = document.getElementById('studentName').value.trim() || "Guest student";
   const group = document.getElementById('studentGroup').value.trim();
   document.getElementById('whoami').textContent = group ? `${name} · ${group}` : name;
   document.getElementById('gate').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
-  await tryRestoreNotes();
   renderPatientList();
   selectPatient(currentPatientId);
 }
@@ -671,9 +641,7 @@ function renderTabContent(){
   else if (currentTab === "investigations") el.innerHTML = tplInvestigations(p);
   else if (currentTab === "letters") el.innerHTML = tplLetters(p);
   else if (currentTab === "referrals") el.innerHTML = tplReferrals(p);
-  else if (currentTab === "immunisations") el.innerHTML = tplImmunisations(p);
-  else if (currentTab === "social") el.innerHTML = tplSocial(p);
-  else if (currentTab === "notes") { el.innerHTML = tplNotes(p); wireNotesTab(p); }
+  else if (currentTab === "notes") el.innerHTML = tplNotes(p);
 }
 
 function tplOverview(p){
@@ -683,11 +651,9 @@ function tplOverview(p){
         <h3>Active problems<span class="count">${p.problems.length}</span></h3>
         ${p.problems.map(pr=>`<div style="margin-bottom:8px;font-size:13.5px;"><b>${pr.name}</b><div style="color:var(--text-soft);font-size:12px;">${pr.status}${pr.since!=="—" ? " · since "+pr.since : ""}</div></div>`).join("") || `<div class="empty-notes">No active problems recorded.</div>`}
       </div>
-      <div class="card">
-        <h3>Household</h3>
-        <p style="font-size:13.5px;line-height:1.6;margin:0;">${p.household}</p>
-      </div>
+      ${tplMedicationCard(p)}
     </div>
+    ${tplAllergyCard(p)}
     <div class="card">
       <h3>Most recent clinical note</h3>
       ${notesData[p.id][0] ? noteEntryHtml(notesData[p.id][0]) : `<div class="empty-notes">No notes recorded yet.</div>`}
@@ -705,15 +671,24 @@ function tplProblems(p){
 }
 
 function tplMeds(p){
-  const medRows = p.meds.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.dose}</td><td>${m.note}</td></tr>`).join("");
-  const allRows = p.allergies.map(a=>`<tr><td><b>${a.name}</b></td><td>${a.reaction}</td></tr>`).join("");
   return `
-    <div class="card"><h3>Current medications<span class="count">${p.meds.length}</span></h3>
-      <table class="rec"><tr><th>Medication</th><th>Directions</th><th>Indication</th></tr>${medRows || `<tr><td colspan="3" class="empty-notes">No medications recorded.</td></tr>`}</table>
-    </div>
-    <div class="card"><h3>Allergies &amp; adverse reactions</h3>
-      <table class="rec"><tr><th>Substance</th><th>Reaction</th></tr>${allRows}</table>
-    </div>`;
+    ${tplMedicationCard(p)}
+    ${tplAllergyCard(p)}
+    ${tplImmunisationsCard(p)}`;
+}
+
+function tplMedicationCard(p){
+  const medRows = p.meds.map(m=>`<tr><td><b>${m.name}</b></td><td>${m.dose}</td><td>${m.note}</td></tr>`).join("");
+  return `<div class="card"><h3>Current medications<span class="count">${p.meds.length}</span></h3>
+    <table class="rec"><tr><th>Medication</th><th>Directions</th><th>Indication</th></tr>${medRows || `<tr><td colspan="3" class="empty-notes">No medications recorded.</td></tr>`}</table>
+  </div>`;
+}
+
+function tplAllergyCard(p){
+  const allRows = p.allergies.map(a=>`<tr><td><b>${a.name}</b></td><td>${a.reaction}</td></tr>`).join("");
+  return `<div class="card"><h3>Allergies &amp; adverse reactions</h3>
+    <table class="rec"><tr><th>Substance</th><th>Reaction</th></tr>${allRows}</table>
+  </div>`;
 }
 
 function tplInvestigations(p){
@@ -760,7 +735,7 @@ function tplReferrals(p){
   </div>`;
 }
 
-function tplImmunisations(p){
+function tplImmunisationsCard(p){
   const rows = (p.immunisations||[]).map(i=>`
     <tr><td class="mono" style="white-space:nowrap;">${i.date}</td><td><b>${i.vaccine}</b></td><td>${i.given_by}</td></tr>
   `).join("");
@@ -769,18 +744,6 @@ function tplImmunisations(p){
     ${rows || `<tr><td colspan="3" class="empty-notes">No immunisations recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr>`}
     </table>
   </div>`;
-}
-
-function tplSocial(p){
-  return `
-    <div class="card"><h3>What's already strong — assets (ABCD)</h3>
-      <ul class="strengths-list">${p.strengths.map(s=>`<li><b>${s.t}</b>${s.d}</li>`).join("")}</ul>
-    </div>
-    <div class="card"><h3>Challenges to be aware of</h3>
-      <ul class="challenges-list">${p.challenges.map(c=>`<li><b>${c.t}</b>${c.d}</li>`).join("")}</ul>
-    </div>
-    <div class="card"><h3>Household context</h3><p style="font-size:13.5px;line-height:1.6;margin:0;">${p.household}</p></div>
-  `;
 }
 
 function noteEntryHtml(n){
@@ -792,110 +755,21 @@ function noteEntryHtml(n){
 }
 
 function tplNotes(p){
-  const src = notesSource[p.id] === "imported" ? "Loaded from an imported Excel workbook" : "Showing default teaching notes — import the linked workbook to refresh";
   const entries = notesData[p.id] || [];
   return `
     <div class="card">
       <div class="notes-toolbar">
-        <div class="src">${src} · ${entries.length} entr${entries.length===1?"y":"ies"}</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn" id="downloadTemplateBtn">Download blank template</button>
-          <button class="btn solid" id="importBtn">Import updated notes from Excel</button>
-        </div>
+        <div class="src">Showing accurate teaching notes as of Week 1.</div>
       </div>
       <div id="notesList">
         ${entries.length ? entries.map(noteEntryHtml).join("") : `<div class="empty-notes">No clinical notes recorded for this patient yet.</div>`}
       </div>
     </div>
-    <div class="card" style="background:#FBFDFC;">
+    <div class="card" style="background:#F7FBFC;">
       <h3>About this data source</h3>
-      <p style="font-size:12.5px;color:var(--text-soft);line-height:1.6;margin:0;">
-        Clinical notes here are kept in a linked Excel workbook (<b>Campbell_Family_Clinical_Notes.xlsx</b>), one sheet per patient, named exactly as in this system (e.g. "${p.sheet}").
-        Tutors add or edit rows in the workbook and re-import it here — nothing is uploaded anywhere; the file is read locally in this browser.
-      </p>
+      <p style="font-size:12.5px;color:var(--text-soft);line-height:1.6;margin:0;">Clinical notes here are fictional - no identifiable individual is represented. Treat it with the same care as a real record.</p>
     </div>
   `;
-}
-
-function wireNotesTab(p){
-  document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('xlsxInput').click());
-  document.getElementById('downloadTemplateBtn').addEventListener('click', downloadTemplate);
-}
-
-/* =========================================================
-   EXCEL IMPORT (SheetJS) — reads the workbook client-side,
-   matches sheet names to patients, replaces their notes.
-   ========================================================= */
-document.getElementById('xlsxInput').addEventListener('change', function(e){
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt){
-    try{
-      const data = new Uint8Array(evt.target.result);
-      const wb = XLSX.read(data, {type:'array'});
-      let updatedCount = 0;
-      let matchedAny = false;
-
-      PATIENTS.forEach(p=>{
-        const sheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === p.sheet.toLowerCase());
-        if (!sheetName) return;
-        matchedAny = true;
-        const ws = wb.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
-        // rows[0] is the header row: Date | Time | Author | Role | Entry Type | Clinical Note
-        const parsed = [];
-        for (let i=1; i<rows.length; i++){
-          const r = rows[i];
-          if (!r || !r[0]) continue;
-          parsed.push({
-            date: String(r[0]).trim(),
-            time: String(r[1]||"").trim(),
-            author: String(r[2]||"").trim(),
-            role: String(r[3]||"").trim(),
-            type: String(r[4]||"").trim(),
-            text: String(r[5]||"").trim(),
-          });
-        }
-        parsed.sort((a,b)=> parseDMY(b.date) - parseDMY(a.date));
-        notesData[p.id] = parsed;
-        notesSource[p.id] = "imported";
-        trySaveNotes(p.id);
-        updatedCount++;
-      });
-
-      if (!matchedAny){
-        showToast("No matching patient sheets found in that file. Sheet tab names must match patient names exactly.");
-      } else {
-        showToast(`Imported clinical notes for ${updatedCount} patient${updatedCount===1?"":"s"} from ${file.name}.`);
-        if (currentTab === "notes") renderTabContent();
-        else renderBanner();
-      }
-    }catch(err){
-      showToast("Could not read that file. Please check it is a valid .xlsx workbook.");
-    }
-    e.target.value = "";
-  };
-  reader.readAsArrayBuffer(file);
-});
-
-function parseDMY(str){
-  const m = String(str).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (!m) return 0;
-  return new Date(+m[3], +m[2]-1, +m[1]).getTime();
-}
-
-function downloadTemplate(){
-  const wb = XLSX.utils.book_new();
-  PATIENTS.forEach(p=>{
-    const header = [["Date","Time","Author","Role","Entry Type","Clinical Note"]];
-    const sample = (notesData[p.id]||[]).slice(0,1).map(n=>[n.date,n.time,n.author,n.role,n.type,n.text]);
-    const ws = XLSX.utils.aoa_to_sheet(header.concat(sample));
-    ws['!cols'] = [{wch:12},{wch:8},{wch:20},{wch:24},{wch:24},{wch:80}];
-    XLSX.utils.book_append_sheet(wb, ws, p.sheet);
-  });
-  XLSX.writeFile(wb, "Campbell_Family_Clinical_Notes_template.xlsx");
-  showToast("Template downloaded — keep the sheet names unchanged.");
 }
 
 /* =========================================================
