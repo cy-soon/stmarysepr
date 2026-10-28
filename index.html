@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SoM Virtual Practice — Virtual Patient Record</title>
+<title>St Mary's University School of Medicine - Simulated Patient Record System</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -219,6 +219,13 @@
   .report-block{
     border-left:3px solid var(--teal);padding:4px 0 4px 14px;margin-top:10px;font-size:13px;line-height:1.6;
   }
+  .report-block p{margin:0 0 8px;}
+  .report-toggle{
+    background:none;border:0;border-left:3px solid var(--teal);padding:2px 0 2px 8px;margin:0;
+    font:inherit;font-weight:700;color:var(--ink);cursor:pointer;text-align:left;
+  }
+  .report-toggle:hover,.report-toggle[aria-expanded="true"]{background:var(--teal-bg);}
+  .reported-by{margin-top:6px;font-size:12px;color:var(--text-soft);}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   @media (max-width: 900px){.grid2{grid-template-columns:1fr;}}
@@ -280,7 +287,7 @@
 <div id="gate">
   <div class="gate-card">
     <img class="gate-mark" src="assets/stmarys-logo.png" alt="St Mary's University London" />
-    <h1>LV Family Practice</h1>
+    <h1>SPHERE</h1>
     <p class="sub">Teaching Electronic Patient Record (EPR) for St Mary's University School of Medicine students.</p>
 
     <div class="field">
@@ -294,15 +301,16 @@
     <button class="gate-btn" id="enterBtn">Open patient record system</button>
 
     <div class="gate-note">This is a simulated record for teaching purposes only. All patient details are fictional — no identifiable individual is represented. Treat it with the same care as a real record.</div>
+    <div class="gate-note" style="margin-top:10px">This system is best viewed on a PC monitor rather than on a mobile phone or other small-screen device.</div>
   </div>
 </div>
 
 <!-- ======================= APP ======================= -->
 <div id="app">
-  <div class="teach-banner"><span class="dot"></span><strong>SIMULATED RECORD — FOR EDUCATIONAL USE ONLY.</strong>&nbsp;The Campbell family is a fictional teaching case. No real patient data is held in this system.</div>
+  <div class="teach-banner"><span class="dot"></span><strong>SIMULATED RECORD — FOR EDUCATIONAL USE ONLY.</strong>&nbsp;All names and details are used for fictional teaching cases. No real patient data is held in this system.</div>
 
   <div class="topbar">
-    <div class="brand"><img class="mark" src="assets/stmarys-logo.png" alt="St Mary's University London" /> LV Family Practice · Patient Record System</div>
+    <div class="brand"><img class="mark" src="assets/stmarys-logo.png" alt="St Mary's University London" /> SPHERE - Simulated Patient Health Electronic Record Environment</div>
     <div class="user"><span id="whoami"></span><button id="signOutBtn">Sign out</button></div>
   </div>
 
@@ -363,10 +371,10 @@ const PATIENTS = [
       {date:"14/01/2026", test:"eGFR", result:"71 mL/min/1.73m²", range:">60", flag:"normal"},
       {date:"14/01/2026", test:"Total cholesterol", result:"4.6 mmol/L", range:"<5.0", flag:"normal"},
       {date:"14/01/2026", test:"Blood pressure", result:"134/82 mmHg", range:"<140/90", flag:"normal"},
-      {date:"20/11/2025", test:"Knee X-ray (bilateral)", result:"Report below", range:"—", flag:"normal", report:"Moderate joint space narrowing and osteophyte formation at both knees, right slightly worse than left, consistent with moderate osteoarthritis. No fracture. Correlate clinically."},
+      {date:"20/11/2025", test:"Knee X-ray (bilateral)", result:"Report below", range:"—", flag:"normal", report:"<p>Bilateral changes more clear on the left knee, seen as narrowed patellofemoral and medial tibiofemoral joint compartments, fine marginal osteophytes, and prominent tibial spines, consistent with moderate osteoarthritis.</p><p>A sessile bony protrusion is seen in the distal posterior aspect of the left femur, consistent with exostosis.</p><p>Correlate clinically.</p>", image:"assets/knee-xray.html", reportedBy:"Consultant Radiologist Dr D. Sunnucks"},
     ],
     letters: [
-      {date:"25/11/2025", from:"Dr D. Sunnucks, Orthopaedic Consultant", to:"Dr S. Kumar, GP", subject:"Outpatient clinic letter — bilateral knee osteoarthritis",
+      {date:"25/11/2025", from:"Dr R. Hartley, Orthopaedic Consultant", to:"Dr S. Kumar, GP", subject:"Outpatient clinic letter — bilateral knee osteoarthritis",
        body:"Thank you for referring Mrs Campbell. Examination confirms moderate bilateral knee osteoarthritis, right greater than left, with reduced range of movement but stable ligaments. Recommend continued physiotherapy and weight-bearing exercise as tolerated. Surgery not indicated at this stage given her mobility remains functional at home. Happy to review again if symptoms progress or if conservative measures fail."},
       {date:"03/09/2025", from:"Diabetes Eye Screening Service", to:"Dr S. Kumar, GP", subject:"Diabetic retinopathy screening result",
        body:"Annual diabetic eye screening completed. No signs of diabetic retinopathy in either eye (R0/M0 bilaterally). Routine recall in 12 months."},
@@ -644,6 +652,15 @@ document.querySelectorAll('.tab').forEach(tab=>{
   });
 });
 
+document.addEventListener("click", e=>{
+  const btn = e.target.closest(".report-toggle");
+  if(!btn) return;
+  const row = btn.closest("tbody").querySelector(".report-row");
+  if(!row) return;
+  row.hidden = !row.hidden;
+  btn.setAttribute("aria-expanded", String(!row.hidden));
+});
+
 function renderTabContent(){
   const p = PATIENTS.find(x=>x.id===currentPatientId);
   const el = document.getElementById('content');
@@ -652,7 +669,7 @@ function renderTabContent(){
   else if (currentTab === "meds") el.innerHTML = tplMeds(p);
   else if (currentTab === "investigations") {
     el.innerHTML = tplInvestigations(p);
-    wireRecordSearch("investigationsSearch", "investigationsResults", "investigationsNoMatch");
+    INV_SECTIONS.forEach(sec=>wireRecordSearch(sec.key+"Search", sec.key+"Results", sec.key+"NoMatch"));
   }
   else if (currentTab === "letters") {
     el.innerHTML = tplLetters(p);
@@ -749,28 +766,46 @@ function tplAllergyCard(p){
   </div>`;
 }
 
-function tplInvestigations(p){
-  const rows = (p.investigations||[]).map(inv=>`
+function invCategory(inv){
+  if (inv.report || /x-ray|ultrasound|\bct\b|\bmri\b|imaging|\becg\b|\bekg\b|continuous glucose monitor/i.test(inv.test)) return "results";
+  if (/blood pressure|weight|bmi|capillary glucose|pulse|temperature|saturation/i.test(inv.test)) return "observations";
+  return "investigations";
+}
+
+function invRowHtml(inv){
+  return `
     <tbody data-searchable-record>
     <tr>
       <td class="mono" style="white-space:nowrap;">${inv.date}</td>
-      <td><b>${inv.test}</b></td>
+      <td>${inv.report ? `<button type="button" class="report-toggle" aria-expanded="false">${inv.test}</button>` : `<b>${inv.test}</b>`}</td>
       <td>${inv.result}</td>
       <td style="color:var(--text-soft);">${inv.range}</td>
       <td><span class="result-flag ${inv.flag}">${inv.flag==='normal' ? 'NORMAL' : inv.flag==='high' ? 'HIGH' : inv.flag==='low' ? 'LOW' : ''}</span></td>
     </tr>
-    ${inv.report ? `<tr><td></td><td colspan="4"><div class="report-block">${inv.report}</div></td></tr>` : ""}
-    </tbody>
-  `).join("");
-  return `<div class="card"><h3>Investigations &amp; results<span class="count">${(p.investigations||[]).length}</span></h3>
-    <input class="record-search" id="investigationsSearch" type="search" placeholder="Search investigations…" aria-label="Search investigations" />
-    <table class="rec" id="investigationsResults"><thead><tr><th>Date</th><th>Test</th><th>Result</th><th>Reference range</th><th>Flag</th></tr></thead>
-      ${rows || `<tbody><tr data-empty-state><td colspan="5" class="empty-notes">No investigations recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr></tbody>`}
-      <tbody><tr id="investigationsNoMatch" hidden><td colspan="5" class="empty-notes">No investigations match your search.</td></tr></tbody>
-    </table>
-  </div>`;
+    ${inv.report ? `<tr class="report-row" hidden><td></td><td colspan="4"><div class="report-block">${inv.report}${inv.image ? `<div class="reported-by"><a href="${inv.image}" target="_blank" rel="noopener">View image (opens in new window)</a></div>` : ""}${inv.reportedBy ? `<div class="reported-by">Reported by ${inv.reportedBy}</div>` : ""}</div></td></tr>` : ""}
+    </tbody>`;
 }
 
+const INV_SECTIONS = [
+  {key:"investigations", title:"Investigations", noun:"investigations"},
+  {key:"observations", title:"Observations", noun:"observations"},
+  {key:"results", title:"Results", noun:"results"}
+];
+
+function tplInvestigations(p){
+  const all = p.investigations||[];
+  return INV_SECTIONS.map(sec=>{
+    const items = all.filter(inv=>invCategory(inv)===sec.key);
+    const rows = items.map(invRowHtml).join("");
+    return `<div class="card"><h3>${sec.title}<span class="count">${items.length}</span></h3>
+    <input class="record-search" id="${sec.key}Search" type="search" placeholder="Search ${sec.noun}…" aria-label="Search ${sec.noun}" />
+    <table class="rec" id="${sec.key}Results"><thead><tr><th>Date</th><th>Test</th><th>Result</th><th>Reference range</th><th>Flag</th></tr></thead>
+      ${rows || `<tbody><tr data-empty-state><td colspan="5" class="empty-notes">No ${sec.noun} recorded${p.id==='natasha' ? ' at this practice.' : ' yet.'}</td></tr></tbody>`}
+      <tbody><tr id="${sec.key}NoMatch" hidden><td colspan="5" class="empty-notes">No ${sec.noun} match your search.</td></tr></tbody>
+    </table>
+  </div>`;
+  }).join("");
+}
 function tplLetters(p){
   const entries = (p.letters||[]).map(l=>`
     <div class="letter-entry" data-searchable-record>
